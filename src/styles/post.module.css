@@ -1,0 +1,69 @@
+/* post.module.css */
+
+/* Container */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--foreground);
+  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+}
+
+/* Post article */
+.post {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Post title */
+.post h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Post image */
+.image {
+  width: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Post content */
+.content {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--foreground);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .post h1 {
+    font-size: 1.75rem;
+  }
+
+  .content {
+    font-size: 0.95rem;
+  }
+
+  .image {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .post h1 {
+    font-size: 1.5rem;
+  }
+
+  .content {
+    font-size: 0.9rem;
+  }
+
+  .image {
+    max-height: 200px;
+  }
+}

@@ -1,0 +1,110 @@
+/* contact.module.css */
+
+/* Container */
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--foreground);
+  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+}
+
+/* Page Title */
+.pageTitle {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  font-weight: 700;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Labels */
+.form label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+/* Inputs and textarea */
+.form input,
+.form textarea {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Textarea */
+.form textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+/* Button */
+.submitBtn {
+  background-color: #2563eb; /* Tailwind blue-600 */
+  color: var(--foreground);
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.submitBtn:hover {
+  background-color: #1d4ed8;
+}
+
+/* Status message */
+.statusMsg {
+  margin-top: 1rem;
+  font-weight: 500;
+  color: green;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 1.5rem;
+  }
+
+  .pageTitle {
+    font-size: 1.75rem;
+  }
+
+  .form input,
+  .form textarea {
+    font-size: 0.95rem;
+  }
+
+  .submitBtn {
+    padding: 0.65rem 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .form input,
+  .form textarea {
+    font-size: 0.9rem;
+  }
+
+  .submitBtn {
+    padding: 0.6rem 0.8rem;
+  }
+}

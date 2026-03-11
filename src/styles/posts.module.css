@@ -1,0 +1,117 @@
+/* posts.module.css */
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--foreground);
+  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+}
+
+/* Page Title */
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+}
+.container h1{
+text-align: center;
+}
+/* Grid layout */
+.postsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* Post card */
+.postCard {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Hover effect */
+.postCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+/* Post image */
+.postImage {
+  width: 100%;
+  height: 600px;
+  object-fit: cover;
+}
+
+/* Post title */
+.postCard h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1rem;
+}
+
+/* Post summary */
+.postCard p {
+  font-size: 1rem;
+  margin: 0 1rem 1rem 1rem;
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+/* Read More button */
+.readMoreBtn {
+  background-color: #2563eb; /* Tailwind blue-600 */
+  color: var(--foreground);
+  border: none;
+  padding: 0.5rem 1rem;
+  margin: 0 1rem 1rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.readMoreBtn:hover {
+  background-color: #1d4ed8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .postImage {
+    height: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .postCard h2 {
+    font-size: 1.1rem;
+  }
+
+  .postCard p {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .postCard h2 {
+    font-size: 1rem;
+  }
+
+  .postCard p {
+    font-size: 0.9rem;
+  }
+
+  .readMoreBtn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+}
