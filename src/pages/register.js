@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Head from "next/head";
+import Link from "next/link";
 import { db, auth } from "../components/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -14,23 +15,25 @@ export default function Register() {
   const [whatsapp, setWhatsapp] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [category, setCategory] = useState(""); // Umukire / Umukene
+  const [category, setCategory] = useState("");
   const [proofFile, setProofFile] = useState(null);
   const [status, setStatus] = useState("");
 
-  // Upload function to Cloudinary
+  // Upload image to Cloudinary
   const uploadToCloudinary = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "Newtalents"); 
+    formData.append("upload_preset", "Newtalents");
     formData.append("cloud_name", "dilowy3fd");
 
-    const endpoint = "https://api.cloudinary.com/v1_1/dilowy3fd/image/upload";
+    const res = await fetch(
+      "https://api.cloudinary.com/v1_1/dilowy3fd/image/upload",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
 
-    const res = await fetch(endpoint, {
-      method: "POST",
-      body: formData,
-    });
     const data = await res.json();
     if (!data.secure_url) throw new Error("Upload failed");
     return data.secure_url;
@@ -38,26 +41,32 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus("kwiyandikisha birimo gukorwa...");
+    setStatus("Kwiyandikisha birimo gukorwa...");
 
     if (!category) {
-      setStatus("Nyamuneka hitamo ikiciro wifuza.");
+      setStatus("Nyamuneka hitamo ikiciro.");
       return;
     }
+
     if (!proofFile) {
-      setStatus("Nyamuneka shyiramo ifoto y'igihamya.");
+      setStatus("Nyamuneka shyiramo screenshot y'igihamya cyo kwishyura.");
       return;
     }
 
     try {
-      // Upload image
+      // upload image
       const proofUrl = await uploadToCloudinary(proofFile);
 
-      // Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // create firebase auth user
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
       const user = userCredential.user;
 
-      // Save to Firestore (users collection)
+      // save user profile
       await setDoc(doc(db, "users", user.uid), {
         firstName,
         lastName,
@@ -69,23 +78,29 @@ export default function Register() {
         createdAt: serverTimestamp(),
       });
 
-      // Save cookies
+      // username
+      const username = `${firstName}_${lastName}`;
+
+      // save cookies
+      Cookies.set("username", username, { expires: 7 });
       Cookies.set("firstName", firstName, { expires: 7 });
       Cookies.set("lastName", lastName, { expires: 7 });
       Cookies.set("email", email, { expires: 7 });
       Cookies.set("category", category, { expires: 7 });
 
-      // Create balance document
+      // create balance document
       const balanceMoney = category === "Umukire" ? 8000000 : 3200000;
-      const username = `${firstName}_${lastName}`;
+
       await setDoc(doc(db, "balance", username), {
         money: balanceMoney,
         createdAt: serverTimestamp(),
       });
 
       setStatus("Kwiyandikisha byakozwe neza!");
-      // Clear form
-      setFirstName(""); setLastName(""); setWhatsapp(""); setEmail(""); setPassword(""); setProofFile(null); setCategory("");
+
+      // redirect to home
+      window.location.href = "/";
+
     } catch (err) {
       console.error(err);
       setStatus("Kwiyandikisha byanze: " + err.message);
@@ -102,21 +117,24 @@ export default function Register() {
         <title>Register | Elluminate Rwanda</title>
         <meta
           name="description"
-          content="Register for Elluminate Rwanda by filling your details and uploading payment proof."
+          content="Iyandikishe muri Elluminate Rwanda."
         />
-        <meta name="keywords" content="register, elluminate, Rwanda, education, payment" />
       </Head>
-<Header />
+
+      <Header />
+
       <div className={styles.container}>
-        <h1 className={styles.pageTitle}>Kwiyandikisha mu muryango wa elluminate Rwanda</h1>
+        <h1 className={styles.pageTitle}>
+          Kwiyandikisha mu muryango wa Elluminate Rwanda
+        </h1>
 
         <ul className={styles.requirements}>
-          <li>Zuza amazina yawe nibyerekeye umwirondoro wawe wose neza.</li>
-          <li>Hitamo ikiciro wifuza (Umukire / Umukene) mu muryango wa Elluminate Rwanda.</li>
-          <li>Shyura amafaranga yo kwiyandikisha: 26,000 RWF (Umukire) cyangwa 13,600 RWF (Umukene).</li>
-          <li>Uhereze screenshot yerekana ko wishyuye ayo mafaranga.</li>
-          <li>Kanda kuri buto ya <strong>Pay</strong> kugirango uhite ukoresha USSD (*182*8*1*456789#).</li>
-          <li>Nyuma y’ibyo, wiyandikishe ku rubuga.</li>
+          <li>Zuza amazina yawe neza.</li>
+          <li>Hitamo ikiciro (Umukire cyangwa Umukene).</li>
+          <li>
+            Shyura amafaranga yo kwiyandikisha: 26,000 RWF cyangwa 13,600 RWF.
+          </li>
+          <li>Ohereza screenshot y'igihamya cyo kwishyura.</li>
         </ul>
 
         <button className={styles.payBtn} onClick={handlePayUSSD}>
@@ -124,56 +142,50 @@ export default function Register() {
         </button>
 
         <form className={styles.form} onSubmit={handleSubmit}>
-          <label htmlFor="firstName">Amazina ya mbere</label>
+          <label>Amazina ya mbere</label>
           <input
             type="text"
-            id="firstName"
-            value={firstName}
             required
+            value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
           />
 
-          <label htmlFor="lastName">Amazina y'umuryango</label>
+          <label>Amazina y'umuryango</label>
           <input
             type="text"
-            id="lastName"
-            value={lastName}
             required
+            value={lastName}
             onChange={(e) => setLastName(e.target.value)}
           />
 
-          <label htmlFor="whatsapp">WhatsApp</label>
+          <label>WhatsApp</label>
           <input
             type="text"
-            id="whatsapp"
-            value={whatsapp}
             required
+            value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
           />
 
-          <label htmlFor="email">Email</label>
+          <label>Email</label>
           <input
             type="email"
-            id="email"
-            value={email}
             required
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <label htmlFor="password">Password</label>
+          <label>Password</label>
           <input
             type="password"
-            id="password"
-            value={password}
             required
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <label htmlFor="category">Hitamo ikiciro</label>
+          <label>Hitamo ikiciro</label>
           <select
-            id="category"
-            value={category}
             required
+            value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
             <option value="">--Hitamo--</option>
@@ -181,20 +193,28 @@ export default function Register() {
             <option value="Umukene">Umukene</option>
           </select>
 
-          <label htmlFor="proof">Igihamya kerekana ko wishyuye (screenshot/photo)</label>
+          <label>Screenshot y'igihamya cyo kwishyura</label>
           <input
             type="file"
-            id="proof"
             accept="image/*"
             required
             onChange={(e) => setProofFile(e.target.files[0])}
           />
 
-          <button type="submit" className={styles.submitBtn}>Register</button>
+          <button type="submit" className={styles.submitBtn}>
+            Register
+          </button>
+
           {status && <p className={styles.statusMsg}>{status}</p>}
         </form>
+
+        <p className={styles.loginText}>
+          Usanzwe ufite account?{" "}
+          <Link href="/login">Injira hano</Link>
+        </p>
       </div>
+
       <Footer />
-      </>
+    </>
   );
 }
