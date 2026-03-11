@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { db } from "../components/firebase";
@@ -9,7 +9,6 @@ import Footer from "@/components/Footer";
 import Cookies from "js-cookie";
 
 export async function getServerSideProps() {
-  // Fata posts zose muri Firestore
   const snapshot = await getDocs(collection(db, "posts"));
   const posts = snapshot.docs.map(doc => {
     const data = doc.data();
@@ -28,18 +27,27 @@ export async function getServerSideProps() {
 }
 
 export default function Home({ posts }) {
+  const [isChecking, setIsChecking] = useState(true);
+
   useEffect(() => {
     const username = Cookies.get("username");
     if (!username) {
       window.location.href = "/register"; // redirect niba username idahari
+    } else {
+      setIsChecking(false); // user afite username, tugaragaze page
     }
   }, []);
+
+  if (isChecking) return null; // ntitwerekane page mbere yo gusuzuma cookie
 
   return (
     <>
       <Head>
         <title>Elluminate Blog - All Posts</title>
-        <meta name="description" content="Ba umutunzi, icyamamare, umunyabwenge hamwe numuryango wacu. elluminate Rwanda turaguha ubutunzi , imbaraga namahirwe. iyandikishe nonaha mu muryango wacu." />
+        <meta
+          name="description"
+          content="Ba umutunzi, icyamamare, umunyabwenge hamwe numuryango wacu. elluminate Rwanda turaguha ubutunzi , imbaraga namahirwe. iyandikishe nonaha mu muryango wacu."
+        />
         <meta name="keywords" content="elluminate, ubutunzi, elluminate Rwanda, tutorials, elluminate" />
         <meta property="og:title" content="Elluminate Blog - All Posts" />
         <meta property="og:description" content="soma ibyerekeye elluminate Rwanda umuryango utanga ubutunzi ku isi yose." />
@@ -51,9 +59,7 @@ export default function Home({ posts }) {
         <div className={styles.postsGrid}>
           {posts.map(post => (
             <div key={post.id} className={styles.postCard}>
-              {post.image && (
-                <img src={post.image} alt={post.title} className={styles.postImage} />
-              )}
+              {post.image && <img src={post.image} alt={post.title} className={styles.postImage} />}
               <h2>{post.title}</h2>
               <p>{post.summary}</p>
               <Link href={`/posts/${post.id}`}>
