@@ -1,17 +1,18 @@
+import { useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { db } from "../components/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import styles from "../styles/posts.module.css"; // andika style zawe hano
+import styles from "../styles/posts.module.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Cookies from "js-cookie";
 
 export async function getServerSideProps() {
   // Fata posts zose muri Firestore
   const snapshot = await getDocs(collection(db, "posts"));
   const posts = snapshot.docs.map(doc => {
     const data = doc.data();
-    // Fata summary: first 150 chars of content without HTML
     const contentText = data.content.replace(/<[^>]+>/g, "");
     return {
       id: doc.id,
@@ -27,6 +28,13 @@ export async function getServerSideProps() {
 }
 
 export default function Home({ posts }) {
+  useEffect(() => {
+    const username = Cookies.get("username");
+    if (!username) {
+      window.location.href = "/register"; // redirect niba username idahari
+    }
+  }, []);
+
   return (
     <>
       <Head>
@@ -37,7 +45,7 @@ export default function Home({ posts }) {
         <meta property="og:description" content="soma ibyerekeye elluminate Rwanda umuryango utanga ubutunzi ku isi yose." />
         <meta property="og:type" content="website" />
       </Head>
-<Header />
+      <Header />
       <div className={styles.container}>
         <h1>ELLUMINATE RWANDA</h1>
         <div className={styles.postsGrid}>
