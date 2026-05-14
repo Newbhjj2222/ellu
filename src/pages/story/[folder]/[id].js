@@ -31,15 +31,50 @@ function getCookie(name, cookieHeader = "") {
   return decodeURIComponent(match.split("=")[1]);
 }
 
-/* ---------------- COPY HTML ---------------- */
-function copyToClipboard(html) {
-  const blob = new Blob([html], { type: "text/html" });
-  const item = new ClipboardItem({ "text/html": blob });
-  navigator.clipboard.write([item]);
+/* ---------------- COPY FUNCTION (ROBUST) ---------------- */
+async function copyToClipboard(html) {
+  try {
+    const blob = new Blob([html], { type: "text/html" });
+
+    const item = new ClipboardItem({
+      "text/html": blob,
+    });
+
+    await navigator.clipboard.write([item]);
+    return true;
+
+  } catch (err) {
+    console.warn("Clipboard HTML failed, fallback used", err);
+
+    try {
+      const temp = document.createElement("textarea");
+
+      temp.value = html
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]*>/g, "");
+
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+
+      return true;
+
+    } catch (e) {
+      console.error("Copy failed completely", e);
+      return false;
+    }
+  }
 }
 
 /* ---------------- PAGE ---------------- */
-export default function StoryPage({ story, prevId, nextId, folder, username }) {
+export default function StoryPage({
+  story,
+  prevId,
+  nextId,
+  folder,
+  username,
+}) {
 
   if (!story) {
     return (
@@ -50,25 +85,32 @@ export default function StoryPage({ story, prevId, nextId, folder, username }) {
   }
 
   return (
-
     <div className={styles.container}>
 
       {/* HEADER */}
       <div className={styles.header}>
 
-        <h1 className={styles.title}>{story.title}</h1>
+        <h1 className={styles.title}>
+          {story.title}
+        </h1>
 
         <div className={styles.actions}>
 
-          {/* COPY */}
+          {/* COPY BUTTON */}
           <button
             className={styles.iconBtn}
-            onClick={() => copyToClipboard(story.content)}
+            onClick={async () => {
+              const ok = await copyToClipboard(story.content);
+
+              if (!ok) {
+                alert("Copy failed");
+              }
+            }}
           >
             <FaCopy />
           </button>
 
-          {/* EDIT */}
+          {/* EDIT BUTTON */}
           <Link
             href={`/write?edit=${story.id}&folder=${folder}`}
             className={styles.iconBtn}
@@ -77,18 +119,20 @@ export default function StoryPage({ story, prevId, nextId, folder, username }) {
           </Link>
 
         </div>
-
       </div>
 
-      {/* CONTENT (rich HTML preserved) */}
+      {/* CONTENT */}
       <div
         className={styles.content}
-        dangerouslySetInnerHTML={{ __html: story.content }}
+        dangerouslySetInnerHTML={{
+          __html: story.content,
+        }}
       />
 
       {/* NAVIGATION */}
       <div className={styles.nav}>
 
+        {/* PREVIOUS */}
         {prevId ? (
           <Link
             href={`/story/${folder}/${prevId}`}
@@ -97,8 +141,11 @@ export default function StoryPage({ story, prevId, nextId, folder, username }) {
             <FaArrowLeft />
             Previous
           </Link>
-        ) : <div />}
+        ) : (
+          <div />
+        )}
 
+        {/* NEXT */}
         {nextId ? (
           <Link
             href={`/story/${folder}/${nextId}`}
@@ -107,7 +154,9 @@ export default function StoryPage({ story, prevId, nextId, folder, username }) {
             Next
             <FaArrowRight />
           </Link>
-        ) : <div />}
+        ) : (
+          <div />
+        )}
 
       </div>
 
@@ -118,9 +167,11 @@ export default function StoryPage({ story, prevId, nextId, folder, username }) {
 /* ---------------- SSR ---------------- */
 export async function getServerSideProps(ctx) {
 
-  const username = getCookie("username", ctx.req.headers.cookie);
+  const username = getCookie(
+    "username",
+    ctx.req.headers.cookie
+  );
 
-  // 🔴 NO USER → LOGIN
   if (!username) {
     return {
       redirect: {
@@ -134,7 +185,6 @@ export async function getServerSideProps(ctx) {
 
   try {
 
-    /* ---------------- STORY ---------------- */
     const storyRef = doc(
       db,
       "netstore",
@@ -164,7 +214,6 @@ export async function getServerSideProps(ctx) {
       ...storySnap.data(),
     };
 
-    /* ---------------- ALL EPISODES (NAV) ---------------- */
     const episodesRef = collection(
       db,
       "netstore",
