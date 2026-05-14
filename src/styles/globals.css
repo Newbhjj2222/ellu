@@ -1,99 +1,59 @@
-@import "tailwindcss";
-
-/* ---------------- SYSTEM THEME VARIABLES ---------------- */
-:root {
-  --background: canvas;
-  --foreground: canvastext;
-}
-
-/* fallback if browser doesn't support system keywords */
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #ffffff;
-    --foreground: #171717;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-/* ---------------- THEME MAPPING ---------------- */
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: system-ui, Arial, sans-serif;
-  --font-mono: ui-monospace, monospace;
-}
-
-/* ---------------- BASE ---------------- */
+/* ---------------- GLOBAL RESET ---------------- */
 html, body {
-  height: 100%;
   margin: 0;
   padding: 0;
+  height: 100%;
+  font-family: system-ui, Arial, sans-serif;
 
   background: var(--background);
   color: var(--foreground);
 
-  font-family: system-ui, Arial, Helvetica, sans-serif;
-
-  /* system feel */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* smooth theme transition */
-  transition: background 0.3s ease, color 0.3s ease;
+  /* Smooth UI behavior */
+  scroll-behavior: smooth;
 }
 
-/* ---------------- DISABLE TEXT SELECTION (LIMITED) ---------------- */
-/* ⚠️ Note: can be bypassed by dev tools, extensions, etc. */
-body {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* allow selection ONLY inside editor/story content */
-.content,
-.editor,
-[contenteditable="true"] {
-  -webkit-user-select: text;
-  user-select: text;
-}
-
-/* ---------------- DISABLE ZOOM (MOBILE BASIC CONTROL) ---------------- */
-/* ⚠️ still bypassable on modern browsers */
+/* ---------------- TOUCH BEHAVIOR ---------------- */
+/* Reduces double-tap zoom delay + improves tap response */
 html {
   touch-action: manipulation;
 }
 
+/* Applies to whole page interactions */
 body {
+  touch-action: manipulation;
+
+  /* Prevent accidental scroll chaining */
   overscroll-behavior: none;
+
+  /* Prevent font resizing weirdness on mobile */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-/* prevent double tap zoom on buttons */
-button, a {
+/* ---------------- INTERACTIVE ELEMENTS ---------------- */
+/* Improves responsiveness of taps */
+button,
+a,
+input,
+textarea,
+[contenteditable="true"] {
   touch-action: manipulation;
 }
 
-/* ---------------- PRINT PREVENTION (LIMITED) ---------------- */
-@media print {
-  body {
-    display: none;
-  }
+/* ---------------- LAYOUT SAFETY ---------------- */
+* {
+  box-sizing: border-box;
 }
 
-/* ---------------- BASIC SCREENSHOT DETERRENTS (NOT GUARANTEED) ---------------- */
-/* disables drag selection visuals + right click feel */
-img, div {
-  -webkit-user-drag: none;
-  user-select: none;
-}
-
-/* disable image drag */
-img {
-  pointer-events: none;
-}
+/* ---------------- NOTE (IMPORTANT) ---------------- */
+/*
+  ❗ This does NOT fully disable zoom.
+  Browsers still allow pinch zoom for accessibility.
+  This only:
+  - reduces double tap zoom delay
+  - improves touch responsiveness
+  - stabilizes mobile interactions
+*/
