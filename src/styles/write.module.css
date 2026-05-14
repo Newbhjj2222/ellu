@@ -291,6 +291,11 @@
 .select:focus {
   border-color: #4f8cff;
 }
+.editor:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(127,127,127,0.6);
+  pointer-events: none;
+}
 
 .modalBtn {
   width: 100%;
