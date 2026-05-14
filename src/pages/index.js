@@ -20,7 +20,6 @@ import {
 
 /* ---------------- COOKIE PARSER ---------------- */
 function getCookie(name, cookieHeader = "") {
-
   if (!cookieHeader) return null;
 
   const match = cookieHeader
@@ -33,6 +32,7 @@ function getCookie(name, cookieHeader = "") {
   return decodeURIComponent(match.split("=")[1]);
 }
 
+/* ---------------- PAGE ---------------- */
 export default function Library({ username, data }) {
 
   return (
@@ -47,7 +47,7 @@ export default function Library({ username, data }) {
           <span>{username}</span>
         </div>
 
-        <h1>Your Library</h1>
+        <h1>Your Stories</h1>
 
       </div>
 
@@ -106,7 +106,7 @@ export default function Library({ username, data }) {
 
       </div>
 
-      {/* FLOATING ACTION BUTTON */}
+      {/* FLOATING WRITE BUTTON */}
       <Link href="/write" className={styles.fab}>
         <FaPen />
       </Link>
@@ -119,15 +119,13 @@ export default function Library({ username, data }) {
 /* ---------------- SSR ---------------- */
 export async function getServerSideProps(ctx) {
 
-  const username = getCookie(
-    "username",
-    ctx.req.headers.cookie
-  );
+  const username = getCookie("username", ctx.req.headers.cookie);
 
+  /* 🔴 FIX: REDIRECT IF NO USER */
   if (!username) {
     return {
       redirect: {
-        destination: "/",
+        destination: "/login",
         permanent: false,
       },
     };
@@ -138,11 +136,12 @@ export async function getServerSideProps(ctx) {
     const userRef = doc(db, "netstore", username);
     const userSnap = await getDoc(userRef);
 
+    /* user exists check */
     if (!userSnap.exists()) {
       return {
-        props: {
-          username,
-          data: [],
+        redirect: {
+          destination: "/login",
+          permanent: false,
         },
       };
     }
@@ -191,12 +190,11 @@ export async function getServerSideProps(ctx) {
     console.error(err);
 
     return {
-      props: {
-        username,
-        data: [],
+      redirect: {
+        destination: "/login",
+        permanent: false,
       },
     };
 
   }
-
 }
