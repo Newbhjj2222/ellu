@@ -326,12 +326,23 @@ export default function Write() {
       {/* EDITOR */}
 
       <div
-        ref={editorRef}
-        className={styles.editor}
-        contentEditable
-        suppressContentEditableWarning={true}
-        data-placeholder="Start writing your story here..."
-      />
+  ref={editorRef}
+  className={styles.editor}
+  contentEditable
+  suppressContentEditableWarning={true}
+  data-placeholder="Start writing your story here..."
+  onInput={() => {
+
+    if (
+      editorRef.current.innerHTML === "<br>"
+    ) {
+
+      editorRef.current.innerHTML = "";
+
+    }
+
+  }}
+/>
 
       {/* CREATE FOLDER MODAL */}
 
