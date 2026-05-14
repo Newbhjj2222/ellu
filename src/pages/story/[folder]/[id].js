@@ -1,4 +1,4 @@
-import styles from "../../../styles/story.module.css";
+import styles from "../../styles/story.module.css";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
@@ -9,7 +9,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 
-import { db } from "../../../components/firebase";
+import { db } from "../../components/firebase";
 
 import {
   FaCopy,
