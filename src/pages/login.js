@@ -7,7 +7,7 @@ import { auth, db } from "../components/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import Cookies from "js-cookie"; // ✅ For cookie
 import styles from "../components/Login.module.css";
-import Net from "../components/Net";
+
 
 
 const Login = () => {
@@ -64,7 +64,7 @@ const Login = () => {
 
   return (
     <>
-      <Net />
+      
       <div className={styles.container}>
         <h2>Sign in</h2>
         <form onSubmit={handleLogin}>
