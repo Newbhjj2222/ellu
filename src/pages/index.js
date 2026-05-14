@@ -17,18 +17,22 @@ import {
 } from "react-icons/fa";
 
 /* ---------------------------
-   SIMPLE COOKIE PARSER (SSR)
+   FAST COOKIE PARSER
 ----------------------------*/
-function parseCookies(cookieHeader = "") {
-  const cookies = {};
+function getCookieValue(cookieHeader, name) {
 
-  cookieHeader.split(";").forEach((cookie) => {
-    const [key, ...v] = cookie.trim().split("=");
-    if (!key) return;
-    cookies[key] = decodeURIComponent(v.join("="));
-  });
+  if (!cookieHeader) return null;
 
-  return cookies;
+  const match = cookieHeader
+    .split(";")
+    .map(v => v.trim())
+    .find(v => v.startsWith(name + "="));
+
+  if (!match) return null;
+
+  return decodeURIComponent(
+    match.split("=")[1]
+  );
 }
 
 export default function Library({ folders }) {
@@ -43,9 +47,16 @@ export default function Library({ folders }) {
 
       <div className={styles.grid}>
 
-        {folders.map((folder, index) => (
+        {folders.length === 0 && (
+          <p>No stories found.</p>
+        )}
 
-          <div key={index} className={styles.card}>
+        {folders.map((folder, i) => (
+
+          <div
+            key={i}
+            className={styles.card}
+          >
 
             <div className={styles.icon}>
               <FaBook />
@@ -91,15 +102,14 @@ export default function Library({ folders }) {
 }
 
 /* ---------------------------
-   SSR
+   SSR (FAST + MINIMAL READS)
 ----------------------------*/
 export async function getServerSideProps(ctx) {
 
-  const cookies = parseCookies(
-    ctx.req.headers.cookie
+  const username = getCookieValue(
+    ctx.req.headers.cookie,
+    "username"
   );
-
-  const username = cookies.username;
 
   if (!username) {
     return {
@@ -110,58 +120,69 @@ export async function getServerSideProps(ctx) {
     };
   }
 
-  const userDoc = doc(
-    db,
-    "netstore",
-    username
-  );
+  try {
 
-  const userSnap = await getDoc(userDoc);
+    const userRef = doc(
+      db,
+      "netstore",
+      username
+    );
 
-  if (!userSnap.exists()) {
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      return {
+        props: { folders: [] },
+      };
+    }
+
+    const data = userSnap.data();
+
+    const folderNames = data.folders || [];
+
+    // 🔥 FAST PARALLEL FETCH (instead of loop await)
+    const folderPromises = folderNames.map(async (name) => {
+
+      const folderRef = collection(
+        userRef,
+        name
+      );
+
+      const snap = await getDocs(folderRef);
+
+      const episodes = snap.docs.map(
+        d => d.id
+      );
+
+      if (episodes.length === 0) return null;
+
+      return {
+        name,
+        count: episodes.length,
+        firstEpisode: episodes[0],
+      };
+
+    });
+
+    const foldersRaw = await Promise.all(folderPromises);
+
+    const folders = foldersRaw.filter(Boolean);
+
+    return {
+      props: {
+        folders,
+      },
+    };
+
+  } catch (err) {
+
+    console.error(err);
+
     return {
       props: {
         folders: [],
       },
     };
-  }
-
-  const data = userSnap.data();
-
-  const folderNames = data.folders || [];
-
-  const folders = [];
-
-  for (const folderName of folderNames) {
-
-    const folderRef = collection(
-      userDoc,
-      folderName
-    );
-
-    const snapshot = await getDocs(folderRef);
-
-    const episodes = [];
-
-    snapshot.forEach((doc) => {
-      episodes.push(doc.id);
-    });
-
-    if (episodes.length > 0) {
-
-      folders.push({
-        name: folderName,
-        count: episodes.length,
-        firstEpisode: episodes[0],
-      });
-
-    }
 
   }
-
-  return {
-    props: {
-      folders,
-    },
-  };
 }
