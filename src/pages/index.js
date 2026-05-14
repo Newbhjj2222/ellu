@@ -10,6 +10,8 @@ import {
 
 import { db } from "../components/firebase";
 
+import * as cookie from "cookie";
+
 import {
   FaUser,
   FaFolder,
@@ -18,25 +20,9 @@ import {
   FaPen,
 } from "react-icons/fa";
 
-/* ---------------- COOKIE PARSER ---------------- */
-function getCookie(name, cookieHeader = "") {
-  if (!cookieHeader) return null;
-
-  const match = cookieHeader
-    .split(";")
-    .map(c => c.trim())
-    .find(c => c.startsWith(name + "="));
-
-  if (!match) return null;
-
-  return decodeURIComponent(match.split("=")[1]);
-}
-
 /* ---------------- PAGE ---------------- */
 export default function Library({ username, data }) {
-
   return (
-
     <div className={styles.container}>
 
       {/* HEADER */}
@@ -112,16 +98,16 @@ export default function Library({ username, data }) {
       </Link>
 
     </div>
-
   );
 }
 
 /* ---------------- SSR ---------------- */
 export async function getServerSideProps(ctx) {
 
-  const username = getCookie("username", ctx.req.headers.cookie);
+  const cookies = cookie.parse(ctx.req.headers.cookie || "");
+  const username = cookies.username || null;
 
-  /* 🔴 FIX: REDIRECT IF NO USER */
+  /* 🔴 Redirect if no cookie */
   if (!username) {
     return {
       redirect: {
@@ -136,7 +122,6 @@ export async function getServerSideProps(ctx) {
     const userRef = doc(db, "netstore", username);
     const userSnap = await getDoc(userRef);
 
-    /* user exists check */
     if (!userSnap.exists()) {
       return {
         redirect: {
@@ -150,7 +135,6 @@ export async function getServerSideProps(ctx) {
     const folderNames = userData.folders || [];
 
     const data = await Promise.all(
-
       folderNames.map(async (folderName) => {
 
         const storiesRef = collection(
@@ -164,7 +148,7 @@ export async function getServerSideProps(ctx) {
 
         const snap = await getDocs(storiesRef);
 
-        const stories = snap.docs.map(doc => ({
+        const stories = snap.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
@@ -173,9 +157,7 @@ export async function getServerSideProps(ctx) {
           name: folderName,
           stories,
         };
-
       })
-
     );
 
     return {
