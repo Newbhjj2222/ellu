@@ -15,6 +15,7 @@ import {
   FaFolder,
   FaBook,
   FaEye,
+  FaPen,
 } from "react-icons/fa";
 
 /* ---------------- COOKIE PARSER ---------------- */
@@ -54,14 +55,16 @@ export default function Library({ username, data }) {
       <div className={styles.grid}>
 
         {data.length === 0 && (
-          <p>No folders or stories found.</p>
+          <div className={styles.empty}>
+            No folders or stories found.
+          </div>
         )}
 
         {data.map((folder, i) => (
 
           <div key={i} className={styles.card}>
 
-            {/* FOLDER TITLE */}
+            {/* FOLDER HEADER */}
             <div className={styles.folderHeader}>
               <FaFolder />
               <h2>{folder.name}</h2>
@@ -78,7 +81,7 @@ export default function Library({ username, data }) {
 
                 <div key={j} className={styles.storyItem}>
 
-                  <FaBook />
+                  <FaBook className={styles.bookIcon} />
 
                   <span className={styles.storyTitle}>
                     {story.title}
@@ -102,6 +105,11 @@ export default function Library({ username, data }) {
         ))}
 
       </div>
+
+      {/* FLOATING ACTION BUTTON */}
+      <Link href="/write" className={styles.fab}>
+        <FaPen />
+      </Link>
 
     </div>
 
@@ -140,7 +148,6 @@ export async function getServerSideProps(ctx) {
     }
 
     const userData = userSnap.data();
-
     const folderNames = userData.folders || [];
 
     const data = await Promise.all(
