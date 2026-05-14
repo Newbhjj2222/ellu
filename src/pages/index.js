@@ -12,6 +12,7 @@ import { db } from "../components/firebase";
 
 import {
   FaBook,
+  FaFolder,
   FaPen,
   FaEye,
   FaUser,
@@ -20,6 +21,8 @@ import {
 /* ---------------- COOKIE PARSER ---------------- */
 function getCookie(name, cookieHeader = "") {
 
+  if (!cookieHeader) return null;
+
   const match = cookieHeader
     .split(";")
     .map(c => c.trim())
@@ -27,12 +30,10 @@ function getCookie(name, cookieHeader = "") {
 
   if (!match) return null;
 
-  return decodeURIComponent(
-    match.split("=")[1]
-  );
+  return decodeURIComponent(match.split("=")[1]);
 }
 
-export default function Library({ folders, username }) {
+export default function Library({ username, folders }) {
 
   return (
 
@@ -42,59 +43,72 @@ export default function Library({ folders, username }) {
       <div className={styles.header}>
 
         <div className={styles.userBox}>
-
           <FaUser />
-
-          <span>
-            {username}
-          </span>
-
+          <span>{username}</span>
         </div>
 
         <h1>Your Stories</h1>
 
       </div>
 
-      {/* GRID */}
+      {/* CONTENT */}
       <div className={styles.grid}>
 
         {folders.length === 0 && (
-          <p>No folders found.</p>
+          <p>No stories found.</p>
         )}
 
         {folders.map((folder, i) => (
 
           <div key={i} className={styles.card}>
 
-            <div className={styles.icon}>
-              <FaBook />
+            {/* FOLDER HEADER */}
+            <div className={styles.folderHeader}>
+              <FaFolder />
+              <h2>{folder.name}</h2>
             </div>
 
-            <h2>{folder.name}</h2>
-
-            <p>
-              {folder.count} episode(s)
+            <p className={styles.count}>
+              {folder.episodes.length} episode(s)
             </p>
 
-            <div className={styles.actions}>
+            {/* EPISODES LIST */}
+            <div className={styles.episodeList}>
 
-              {/* CONTINUE WRITING */}
-              <Link
-                href={`/write?folder=${folder.name}`}
-                className={styles.writeBtn}
-              >
-                <FaPen />
-                Continue
-              </Link>
+              {folder.episodes.map((ep) => (
 
-              {/* VIEW STORY */}
-              <Link
-                href={`/story/${folder.name}/${folder.firstEpisode}`}
-                className={styles.viewBtn}
-              >
-                <FaEye />
-                View
-              </Link>
+                <div
+                  key={ep.id}
+                  className={styles.episode}
+                >
+
+                  <span className={styles.epTitle}>
+                    {ep.title}
+                  </span>
+
+                  <div className={styles.epActions}>
+
+                    {/* CONTINUE EDIT */}
+                    <Link
+                      href={`/write?folder=${folder.name}&episode=${ep.id}`}
+                      className={styles.smallBtn}
+                    >
+                      <FaPen />
+                    </Link>
+
+                    {/* VIEW STORY */}
+                    <Link
+                      href={`/story/${folder.name}/${ep.id}`}
+                      className={styles.smallBtn}
+                    >
+                      <FaEye />
+                    </Link>
+
+                  </div>
+
+                </div>
+
+              ))}
 
             </div>
 
@@ -118,35 +132,26 @@ export async function getServerSideProps(ctx) {
   );
 
   if (!username) {
-
     return {
       redirect: {
         destination: "/",
         permanent: false,
       },
     };
-
   }
 
   try {
 
-    const userRef = doc(
-      db,
-      "netstore",
-      username
-    );
-
+    const userRef = doc(db, "netstore", username);
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
-
       return {
         props: {
-          folders: [],
           username,
+          folders: [],
         },
       };
-
     }
 
     const data = userSnap.data();
@@ -155,25 +160,19 @@ export async function getServerSideProps(ctx) {
 
     const folders = await Promise.all(
 
-      folderNames.map(async (name) => {
+      folderNames.map(async (folderName) => {
 
-        const colRef = collection(
-          userRef,
-          name
-        );
-
+        const colRef = collection(userRef, folderName);
         const snap = await getDocs(colRef);
 
-        const episodes = snap.docs.map(
-          d => d.id
-        );
-
-        if (episodes.length === 0) return null;
+        const episodes = snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
         return {
-          name,
-          count: episodes.length,
-          firstEpisode: episodes[0],
+          name: folderName,
+          episodes,
         };
 
       })
@@ -182,8 +181,8 @@ export async function getServerSideProps(ctx) {
 
     return {
       props: {
-        folders: folders.filter(Boolean),
         username,
+        folders: folders.filter(f => f.episodes.length > 0),
       },
     };
 
@@ -193,8 +192,8 @@ export async function getServerSideProps(ctx) {
 
     return {
       props: {
-        folders: [],
         username,
+        folders: [],
       },
     };
 
