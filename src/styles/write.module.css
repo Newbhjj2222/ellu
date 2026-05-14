@@ -117,14 +117,16 @@
   padding-top: 80px;
   padding-bottom: 120px;
 
-  padding-left: clamp(18px, 8vw, 240px);
-  padding-right: clamp(18px, 8vw, 240px);
+  padding-left: clamp(18px, 8vw, 180px);
+  padding-right: clamp(18px, 8vw, 180px);
 
   outline: none;
 
-  font-size: clamp(16px, 2vw, 21px);
+  font-size: clamp(15px, 1.2vw, 18px);
 
-  line-height: 2;
+  line-height: 1.8;
+
+  font-weight: 400;
 
   color: var(--foreground);
 
@@ -142,15 +144,26 @@
   border-radius: 12px;
 }
 
-.editor h1,
-.editor h2,
-.editor h3 {
-  margin-top: 30px;
-  margin-bottom: 15px;
+.editor p {
+  margin: 0 0 14px;
 }
 
-.editor p {
+.editor h1 {
+  font-size: 32px;
+  font-weight: 700;
   margin-bottom: 18px;
+}
+
+.editor h2 {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.editor h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 14px;
 }
 
 /* =======================
