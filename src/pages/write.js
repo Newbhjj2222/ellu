@@ -36,7 +36,6 @@ export default function Write() {
   const [showToolbar, setShowToolbar] = useState(false);
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolder, setNewFolder] = useState("");
-
   const [showSaveModal, setShowSaveModal] = useState(false);
 
   const [message, setMessage] = useState("");
@@ -46,11 +45,9 @@ export default function Write() {
   useEffect(() => {
 
     const savedUsername = Cookies.get("username");
-
     if (savedUsername) setUsername(savedUsername);
 
     const loadFolders = async () => {
-
       if (!savedUsername) return;
 
       const userRef = doc(db, "netstore", savedUsername);
@@ -59,10 +56,31 @@ export default function Write() {
       if (snap.exists()) {
         setFolders(snap.data().folders || []);
       }
-
     };
 
     loadFolders();
+
+  }, []);
+
+  /* ---------------- CLOSE ON OUTSIDE CLICK ---------------- */
+  useEffect(() => {
+
+    const closeAll = (e) => {
+
+      if (toolbarRef.current && !toolbarRef.current.contains(e.target)) {
+        setShowToolbar(false);
+      }
+
+      const modalClick = e.target.classList.contains(styles.modalOverlay);
+      if (modalClick) {
+        setShowFolderModal(false);
+        setShowSaveModal(false);
+      }
+
+    };
+
+    document.addEventListener("mousedown", closeAll);
+    return () => document.removeEventListener("mousedown", closeAll);
 
   }, []);
 
@@ -71,13 +89,12 @@ export default function Write() {
     document.execCommand(command, false, value);
   };
 
-  /* ---------------- CREATE FOLDER (DB + STATE) ---------------- */
+  /* ---------------- CREATE FOLDER ---------------- */
   const createFolder = async () => {
 
     if (!newFolder.trim()) return;
 
     const updated = [...folders, newFolder];
-
     setFolders(updated);
 
     const userRef = doc(db, "netstore", username);
@@ -92,7 +109,7 @@ export default function Write() {
 
   };
 
-  /* ---------------- SAVE STORY (FULL DB STORAGE) ---------------- */
+  /* ---------------- SAVE STORY ---------------- */
   const saveStory = async () => {
 
     const content = editorRef.current?.innerHTML;
@@ -105,9 +122,6 @@ export default function Write() {
 
       setLoading(true);
 
-      // MAIN STORY COLLECTION STRUCTURE:
-      // netstore/{username}/stories/{folder}/episodes
-
       const storyRef = collection(
         db,
         "netstore",
@@ -118,36 +132,23 @@ export default function Write() {
       );
 
       await addDoc(storyRef, {
-
-        username,              // ✔ user
-        folder: selectedFolder,// ✔ folder
-        title: episodeTitle,   // ✔ title
-        content,               // ✔ full story
-
+        username,
+        folder: selectedFolder,
+        title: episodeTitle,
+        content,
         createdAt: serverTimestamp(),
-
       });
 
       setMessage("Story saved successfully.");
 
-      // reset editor
-      if (editorRef.current) {
-        editorRef.current.innerHTML = "";
-      }
-
+      editorRef.current.innerHTML = "";
       setEpisodeTitle("");
       setSelectedFolder("");
-
-      Cookies.remove("draft_story");
-      Cookies.remove("draft_title");
 
       setShowSaveModal(false);
 
     } catch (err) {
-
-      console.error(err);
       setMessage("Error saving story.");
-
     } finally {
       setLoading(false);
     }
@@ -162,9 +163,8 @@ export default function Write() {
       <div className={styles.topBar}>
 
         <input
-          type="text"
-          placeholder="Episode title..."
           className={styles.titleInput}
+          placeholder="Episode title..."
           value={episodeTitle}
           onChange={(e) => setEpisodeTitle(e.target.value)}
         />
@@ -187,25 +187,13 @@ export default function Write() {
 
       </div>
 
-      {/* TOOLBAR */}
+      {/* FLOATING TOOLBAR */}
       {showToolbar && (
-
         <div ref={toolbarRef} className={styles.toolbar}>
-
-          <button onClick={() => formatText("bold")}>
-            <FaBold />
-          </button>
-
-          <button onClick={() => formatText("italic")}>
-            <FaItalic />
-          </button>
-
-          <button onClick={() => formatText("underline")}>
-            <FaUnderline />
-          </button>
-
+          <button onClick={() => formatText("bold")}><FaBold /></button>
+          <button onClick={() => formatText("italic")}><FaItalic /></button>
+          <button onClick={() => formatText("underline")}><FaUnderline /></button>
         </div>
-
       )}
 
       {/* EDITOR */}
@@ -214,16 +202,13 @@ export default function Write() {
         className={styles.editor}
         contentEditable
         suppressContentEditableWarning
-        data-placeholder="Start writing your story here..."
+        data-placeholder="Start writing your story..."
       />
 
-      {/* CREATE FOLDER */}
+      {/* MODAL FOLDER */}
       {showFolderModal && (
-
         <div className={styles.modalOverlay}>
-
           <div className={styles.modal}>
-
             <h3>Create Folder</h3>
 
             <input
@@ -232,40 +217,25 @@ export default function Write() {
               onChange={(e) => setNewFolder(e.target.value)}
             />
 
-            <button onClick={createFolder}>
-              Create
-            </button>
-
+            <button onClick={createFolder}>Create</button>
           </div>
-
         </div>
-
       )}
 
-      {/* SAVE STORY */}
+      {/* SAVE MODAL */}
       {showSaveModal && (
-
         <div className={styles.modalOverlay}>
-
           <div className={styles.modal}>
-
             <h3>Save Story</h3>
 
             <select
               value={selectedFolder}
               onChange={(e) => setSelectedFolder(e.target.value)}
             >
-
-              <option value="">
-                Select folder
-              </option>
-
+              <option value="">Select folder</option>
               {folders.map((f, i) => (
-                <option key={i} value={f}>
-                  {f}
-                </option>
+                <option key={i} value={f}>{f}</option>
               ))}
-
             </select>
 
             <button onClick={saveStory} disabled={loading}>
@@ -273,17 +243,11 @@ export default function Write() {
             </button>
 
           </div>
-
         </div>
-
       )}
 
       {/* MESSAGE */}
-      {message && (
-        <div className={styles.message}>
-          {message}
-        </div>
-      )}
+      {message && <div className={styles.message}>{message}</div>}
 
     </div>
 
