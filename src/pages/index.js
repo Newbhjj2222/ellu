@@ -1,5 +1,8 @@
-import styles from "../styles/library.module.css";
+'use client';
+
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import styles from "../styles/library.module.css";
 
 import {
   doc,
@@ -10,8 +13,6 @@ import {
 
 import { db } from "../components/firebase";
 
-import * as cookie from "cookie";
-
 import {
   FaUser,
   FaFolder,
@@ -20,10 +21,104 @@ import {
   FaPen,
 } from "react-icons/fa";
 
+import Cookies from "js-cookie";
+
 /* ======================
-   PAGE UI
+   PAGE
 ====================== */
-export default function Library({ username, data }) {
+export default function Library() {
+
+  const [username, setUsername] = useState(null);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ======================
+     LOAD USER + DATA
+  ====================== */
+  useEffect(() => {
+
+    const fetchData = async () => {
+
+      try {
+
+        /* 1. GET COOKIE */
+        const cookieUser = Cookies.get("username");
+
+        if (!cookieUser) {
+          window.location.href = "/login";
+          return;
+        }
+
+        setUsername(cookieUser);
+
+        /* 2. GET USER DOC */
+        const userRef = doc(db, "netstore", cookieUser);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const folders = userSnap.data().folders || [];
+
+        /* 3. GET STORIES (FAST PARALLEL) */
+        const result = await Promise.all(
+          folders.map(async (folderName) => {
+
+            const storiesRef = collection(
+              db,
+              "netstore",
+              cookieUser,
+              "stories",
+              folderName,
+              "episodes"
+            );
+
+            const snap = await getDocs(storiesRef);
+
+            const stories = snap.docs.map((d) => ({
+              id: d.id,
+              ...d.data(),
+            }));
+
+            return {
+              name: folderName,
+              stories,
+            };
+
+          })
+        );
+
+        setData(result.filter(f => f.stories.length > 0));
+
+      } catch (err) {
+        console.error(err);
+        window.location.href = "/login";
+      } finally {
+        setLoading(false);
+      }
+
+    };
+
+    fetchData();
+
+  }, []);
+
+  /* ======================
+     LOADING STATE (PAGE HIDDEN UNTIL READY)
+  ====================== */
+  if (loading) {
+    return (
+      <div className={styles.loading}>
+        Loading your stories...
+      </div>
+    );
+  }
+
+  /* ======================
+     RENDER
+  ====================== */
   return (
     <div className={styles.container}>
 
@@ -86,98 +181,11 @@ export default function Library({ username, data }) {
 
       </div>
 
-      {/* FLOATING WRITE BUTTON */}
+      {/* WRITE BUTTON */}
       <Link href="/write" className={styles.fab}>
         <FaPen />
       </Link>
 
     </div>
   );
-}
-
-/* ======================
-   SSR (FAST VERSION)
-====================== */
-export async function getServerSideProps(ctx) {
-
-  const cookies = cookie.parse(ctx.req.headers.cookie || "");
-  const username = cookies.username || null;
-
-  if (!username) {
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  }
-
-  try {
-
-    /* ======================
-       1. USER DATA (1 QUERY)
-    ====================== */
-    const userRef = doc(db, "netstore", username);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      return {
-        redirect: {
-          destination: "/login",
-          permanent: false,
-        },
-      };
-    }
-
-    const folders = userSnap.data().folders || [];
-
-    /* ======================
-       2. LOAD STORIES (PARALLEL)
-    ====================== */
-    const data = await Promise.all(
-      folders.map(async (folderName) => {
-
-        const storiesRef = collection(
-          db,
-          "netstore",
-          username,
-          "stories",
-          folderName,
-          "episodes"
-        );
-
-        const snap = await getDocs(storiesRef);
-
-        const stories = snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        }));
-
-        return {
-          name: folderName,
-          stories,
-        };
-      })
-    );
-
-    /* ======================
-       RESULT
-    ====================== */
-    return {
-      props: {
-        username,
-        data: data.filter(f => f.stories.length > 0),
-      },
-    };
-
-  } catch (err) {
-    console.error("Library error:", err);
-
-    return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
-    };
-  }
 }
