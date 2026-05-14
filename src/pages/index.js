@@ -20,21 +20,21 @@ import {
   FaPen,
 } from "react-icons/fa";
 
-/* ---------------- PAGE ---------------- */
+/* ======================
+   PAGE UI
+====================== */
 export default function Library({ username, data }) {
   return (
     <div className={styles.container}>
 
       {/* HEADER */}
       <div className={styles.header}>
-
         <div className={styles.userBox}>
           <FaUser />
           <span>{username}</span>
         </div>
 
         <h1>Your Stories</h1>
-
       </div>
 
       {/* CONTENT */}
@@ -46,11 +46,9 @@ export default function Library({ username, data }) {
           </div>
         )}
 
-        {data.map((folder, i) => (
+        {data.map((folder) => (
+          <div key={folder.name} className={styles.card}>
 
-          <div key={i} className={styles.card}>
-
-            {/* FOLDER HEADER */}
             <div className={styles.folderHeader}>
               <FaFolder />
               <h2>{folder.name}</h2>
@@ -60,12 +58,10 @@ export default function Library({ username, data }) {
               {folder.stories.length} story(s)
             </p>
 
-            {/* STORIES */}
             <div className={styles.storyList}>
 
-              {folder.stories.map((story, j) => (
-
-                <div key={j} className={styles.storyItem}>
+              {folder.stories.map((story) => (
+                <div key={story.id} className={styles.storyItem}>
 
                   <FaBook className={styles.bookIcon} />
 
@@ -81,13 +77,11 @@ export default function Library({ username, data }) {
                   </Link>
 
                 </div>
-
               ))}
 
             </div>
 
           </div>
-
         ))}
 
       </div>
@@ -101,13 +95,14 @@ export default function Library({ username, data }) {
   );
 }
 
-/* ---------------- SSR ---------------- */
+/* ======================
+   SSR (FAST VERSION)
+====================== */
 export async function getServerSideProps(ctx) {
 
   const cookies = cookie.parse(ctx.req.headers.cookie || "");
   const username = cookies.username || null;
 
-  /* 🔴 Redirect if no cookie */
   if (!username) {
     return {
       redirect: {
@@ -119,6 +114,9 @@ export async function getServerSideProps(ctx) {
 
   try {
 
+    /* ======================
+       1. USER DATA (1 QUERY)
+    ====================== */
     const userRef = doc(db, "netstore", username);
     const userSnap = await getDoc(userRef);
 
@@ -131,11 +129,13 @@ export async function getServerSideProps(ctx) {
       };
     }
 
-    const userData = userSnap.data();
-    const folderNames = userData.folders || [];
+    const folders = userSnap.data().folders || [];
 
+    /* ======================
+       2. LOAD STORIES (PARALLEL)
+    ====================== */
     const data = await Promise.all(
-      folderNames.map(async (folderName) => {
+      folders.map(async (folderName) => {
 
         const storiesRef = collection(
           db,
@@ -148,9 +148,9 @@ export async function getServerSideProps(ctx) {
 
         const snap = await getDocs(storiesRef);
 
-        const stories = snap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+        const stories = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
         }));
 
         return {
@@ -160,6 +160,9 @@ export async function getServerSideProps(ctx) {
       })
     );
 
+    /* ======================
+       RESULT
+    ====================== */
     return {
       props: {
         username,
@@ -168,8 +171,7 @@ export async function getServerSideProps(ctx) {
     };
 
   } catch (err) {
-
-    console.error(err);
+    console.error("Library error:", err);
 
     return {
       redirect: {
@@ -177,6 +179,5 @@ export async function getServerSideProps(ctx) {
         permanent: false,
       },
     };
-
   }
 }
