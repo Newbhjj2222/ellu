@@ -1,73 +1,105 @@
-import { useState } from "react";
-import Head from "next/head";
-import { auth } from "../components/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import Cookies from "js-cookie";
-import styles from "../styles/login.module.css";
-import { useRouter } from "next/router";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+'use client';
 
-export default function Login() {
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../components/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import Cookies from "js-cookie"; // ✅ For cookie
+import styles from "../components/Login.module.css";
+
+
+
+const Login = () => {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState("");
-  const router = useRouter();
+  const [message, setMessage] = useState("");
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setStatus("Kwinjira birimo...");
+    setMessage("");
 
     try {
+      // Injira muri Firebase Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Save cookies
-      Cookies.set("email", email, { expires: 7 });
+      // Fata document 'data' ibitse users bose
+      const docRef = doc(db, "userdate", "data");
+      const docSnap = await getDoc(docRef);
 
-      setStatus("Winjiye neza!");
-      // Redirect to dashboard or homepage
-      router.push("/"); // niba ufite page ya dashboard
-    } catch (err) {
-      console.error(err);
-      setStatus("Login yaranze: " + err.message);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        let found = false;
+
+        // Shaka aho email yinjijwe ihuye n’iyo ibitse muri database
+        for (const key in data) {
+          const userData = data[key];
+          if (userData.email === email) {
+            const fName = userData.fName || "Unknown";
+
+            // ✅ Save username in cookie instead of localStorage
+            Cookies.set("username", fName, { expires: 7 }); // 7 days
+
+            found = true;
+            break;
+          }
+        }
+
+        if (found) {
+          setMessage("Winjiye neza!");
+          router.push("/"); // Next.js route
+        } else {
+          setMessage("Email ntiyabonywe muri Firestore.");
+        }
+      } else {
+        setMessage("Nta document 'data' ibonetse muri Firestore.");
+      }
+
+    } catch (error) {
+      setMessage("Injira ntibishobotse: " + error.message);
     }
   };
 
   return (
     <>
-      <Head>
-        <title>Login | Elluminate Rwanda</title>
-        <meta name="description" content="Login to Elluminate Rwanda using your email and password." />
-      </Head>
-<Header />
+      
       <div className={styles.container}>
-        <h1 className={styles.pageTitle}>Kwinjira</h1>
-
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            required
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            required
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <button type="submit" className={styles.submitBtn}>Login</button>
-          {status && <p className={styles.statusMsg}>{status}</p>}
+        <h2>Sign in</h2>
+        <form onSubmit={handleLogin}>
+          {message && <div className={styles.messageDiv}>{message}</div>}
+          <div className={styles.inputGroup}>
+            <i className="fas fa-envelope"></i>
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <i className="fas fa-lock"></i>
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <button className={styles.btn} type="submit">Sign In</button>
         </form>
+
+        <div className={styles.registerLink}>
+          <p>
+            Niba nta konti ya author ufite twandikire WhatsApp kuri{" "}
+            <strong>+250722319367</strong> tugufashe.
+          </p>
+        </div>
       </div>
-      <Footer />
+      
     </>
   );
-}
+};
+
+export default Login;
