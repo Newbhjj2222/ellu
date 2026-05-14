@@ -1,25 +1,23 @@
 // src/components/firebase.js
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// Firebase configuration
+// Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyD9yWK7qWFxtZE8NBWnlDg0QG0MXRjHdQ0",
-  authDomain: "elluminate-904ac.firebaseapp.com",
-  projectId: "elluminate-904ac",
-  storageBucket: "elluminate-904ac.appspot.com",
-  messagingSenderId: "954424892485",
-  appId: "1:954424892485:web:6596511e522e87101b572c",
+  apiKey: "AIzaSyAvwNyhKiKFyI-r6MDDk7BH3iq7P61z594",
+  authDomain: "newtalents-a7c29.firebaseapp.com",
+  databaseURL: "https://newtalents-a7c29-default-rtdb.firebaseio.com",
+  projectId: "newtalents-a7c29",
+  storageBucket: "newtalents-a7c29.appspot.com",
+  messagingSenderId: "507408992610",
+  appId: "1:507408992610:web:05ce220a4cb4922de9843b",
+  measurementId: "G-XZVMTFEQBE"
 };
 
-// Initialize Firebase app (prevent multiple in Next.js)
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase app only once
+export const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 
-// Firestore instance
+// Export Firestore and Auth
 export const db = getFirestore(app);
-
-// Firebase Auth instance
 export const auth = getAuth(app);
-
-export default app;
