@@ -4,7 +4,9 @@
   color: var(--foreground);
   padding: 20px;
 }
-
+.container h1{
+  text-align: center;
+}
 /* ---------------- HEADER ---------------- */
 .header {
   display: flex;
