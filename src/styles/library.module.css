@@ -1,80 +1,169 @@
 .container {
   min-height: 100vh;
-  padding: 30px;
   background: var(--background);
   color: var(--foreground);
-}
-
-.header {
-  margin-bottom: 30px;
-}
-
-.header h1 {
-  font-size: 32px;
-}
-
-.grid {
-  display: grid;
-
-  grid-template-columns:
-    repeat(auto-fit, minmax(280px, 1fr));
-
-  gap: 20px;
-}
-
-.card {
   padding: 20px;
-
-  border-radius: 20px;
-
-  background:
-    rgba(127,127,127,0.08);
-
-  border:
-    1px solid rgba(127,127,127,0.12);
 }
 
-.icon {
-  font-size: 28px;
-  margin-bottom: 15px;
-}
+/* ---------------- HEADER ---------------- */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 
-.card h2 {
-  margin-bottom: 8px;
-}
-
-.card p {
-  opacity: 0.7;
   margin-bottom: 20px;
 }
 
-.actions {
+.userBox {
   display: flex;
-  gap: 10px;
-}
+  align-items: center;
+  gap: 8px;
 
-.writeBtn,
-.viewBtn {
-  flex: 1;
-
-  height: 42px;
+  padding: 8px 12px;
+  width: fit-content;
 
   border-radius: 12px;
+  background: rgba(127,127,127,0.12);
+}
+
+.header h1 {
+  font-size: 22px;
+}
+
+/* ---------------- GRID ---------------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 15px;
+}
+
+/* ---------------- CARD ---------------- */
+.card {
+  border: 1px solid rgba(127,127,127,0.25);
+  border-radius: 14px;
+
+  padding: 15px;
+
+  background: rgba(127,127,127,0.05);
+  backdrop-filter: blur(8px);
+
+  transition: 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* ---------------- FOLDER ---------------- */
+.folderHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-bottom: 6px;
+}
+
+.count {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-bottom: 10px;
+}
+
+/* ---------------- STORIES ---------------- */
+.storyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.storyItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px;
+  border-radius: 10px;
+
+  background: rgba(127,127,127,0.1);
+}
+
+.bookIcon {
+  margin-right: 8px;
+}
+
+.storyTitle {
+  flex: 1;
+  font-size: 14px;
+}
+
+/* ---------------- VIEW BUTTON ---------------- */
+.viewBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 10px;
+  border-radius: 8px;
+
+  background: rgba(100,150,255,0.25);
+  color: var(--foreground);
+
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.viewBtn:hover {
+  background: rgba(100,150,255,0.5);
+}
+
+/* ---------------- EMPTY ---------------- */
+.empty {
+  padding: 20px;
+  text-align: center;
+  opacity: 0.6;
+}
+
+/* ---------------- FLOATING BUTTON ---------------- */
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+
+  width: 55px;
+  height: 55px;
+
+  border-radius: 50%;
 
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
 
-  text-decoration: none;
-
+  background: rgba(100,150,255,0.9);
   color: white;
+
+  font-size: 20px;
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+
+  transition: 0.2s ease;
+  z-index: 999;
 }
 
-.writeBtn {
-  background: #4f8cff;
+.fab:hover {
+  transform: scale(1.08);
+  background: rgba(100,150,255,1);
 }
 
-.viewBtn {
-  background: #111;
+/* ---------------- RESPONSIVE ---------------- */
+@media (max-width: 768px) {
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fab {
+    width: 50px;
+    height: 50px;
+  }
+
 }
