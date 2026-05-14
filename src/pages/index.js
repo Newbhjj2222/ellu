@@ -16,29 +16,21 @@ import {
   FaEye,
 } from "react-icons/fa";
 
-/* ---------------------------
-   FAST COOKIE PARSER
-----------------------------*/
-function getCookieValue(cookieHeader, name) {
-
-  if (!cookieHeader) return null;
-
+/* ---------------- COOKIE PARSER ---------------- */
+function getCookie(name, cookieHeader = "") {
   const match = cookieHeader
     .split(";")
-    .map(v => v.trim())
-    .find(v => v.startsWith(name + "="));
+    .map(c => c.trim())
+    .find(c => c.startsWith(name + "="));
 
   if (!match) return null;
 
-  return decodeURIComponent(
-    match.split("=")[1]
-  );
+  return decodeURIComponent(match.split("=")[1]);
 }
 
 export default function Library({ folders }) {
 
   return (
-
     <div className={styles.container}>
 
       <div className={styles.header}>
@@ -48,15 +40,12 @@ export default function Library({ folders }) {
       <div className={styles.grid}>
 
         {folders.length === 0 && (
-          <p>No stories found.</p>
+          <p>No folders yet.</p>
         )}
 
         {folders.map((folder, i) => (
 
-          <div
-            key={i}
-            className={styles.card}
-          >
+          <div key={i} className={styles.card}>
 
             <div className={styles.icon}>
               <FaBook />
@@ -64,9 +53,7 @@ export default function Library({ folders }) {
 
             <h2>{folder.name}</h2>
 
-            <p>
-              {folder.count} episode(s)
-            </p>
+            <p>{folder.count} episode(s)</p>
 
             <div className={styles.actions}>
 
@@ -97,18 +84,15 @@ export default function Library({ folders }) {
       </div>
 
     </div>
-
   );
 }
 
-/* ---------------------------
-   SSR (FAST + MINIMAL READS)
-----------------------------*/
+/* ---------------- SSR ---------------- */
 export async function getServerSideProps(ctx) {
 
-  const username = getCookieValue(
-    ctx.req.headers.cookie,
-    "username"
+  const username = getCookie(
+    "username",
+    ctx.req.headers.cookie
   );
 
   if (!username) {
@@ -122,55 +106,38 @@ export async function getServerSideProps(ctx) {
 
   try {
 
-    const userRef = doc(
-      db,
-      "netstore",
-      username
-    );
-
+    const userRef = doc(db, "netstore", username);
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
-      return {
-        props: { folders: [] },
-      };
+      return { props: { folders: [] } };
     }
 
     const data = userSnap.data();
-
     const folderNames = data.folders || [];
 
-    // 🔥 FAST PARALLEL FETCH (instead of loop await)
-    const folderPromises = folderNames.map(async (name) => {
+    const folders = await Promise.all(
+      folderNames.map(async (name) => {
 
-      const folderRef = collection(
-        userRef,
-        name
-      );
+        const colRef = collection(userRef, name);
+        const snap = await getDocs(colRef);
 
-      const snap = await getDocs(folderRef);
+        const episodes = snap.docs.map(d => d.id);
 
-      const episodes = snap.docs.map(
-        d => d.id
-      );
+        if (episodes.length === 0) return null;
 
-      if (episodes.length === 0) return null;
+        return {
+          name,
+          count: episodes.length,
+          firstEpisode: episodes[0],
+        };
 
-      return {
-        name,
-        count: episodes.length,
-        firstEpisode: episodes[0],
-      };
-
-    });
-
-    const foldersRaw = await Promise.all(folderPromises);
-
-    const folders = foldersRaw.filter(Boolean);
+      })
+    );
 
     return {
       props: {
-        folders,
+        folders: folders.filter(Boolean),
       },
     };
 
