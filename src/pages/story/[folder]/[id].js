@@ -31,39 +31,29 @@ function getCookie(name, cookieHeader = "") {
   return decodeURIComponent(match.split("=")[1]);
 }
 
-/* ---------------- COPY FUNCTION (ROBUST) ---------------- */
-async function copyToClipboard(html) {
+/* ---------------- COPY (100% WORKING METHOD) ---------------- */
+function copyVisibleStory() {
   try {
-    const blob = new Blob([html], { type: "text/html" });
+    const element = document.getElementById("story-content");
 
-    const item = new ClipboardItem({
-      "text/html": blob,
-    });
+    if (!element) return false;
 
-    await navigator.clipboard.write([item]);
-    return true;
+    const range = document.createRange();
+    range.selectNodeContents(element);
+
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    const success = document.execCommand("copy");
+
+    selection.removeAllRanges();
+
+    return success;
 
   } catch (err) {
-    console.warn("Clipboard HTML failed, fallback used", err);
-
-    try {
-      const temp = document.createElement("textarea");
-
-      temp.value = html
-        .replace(/<br\s*\/?>/gi, "\n")
-        .replace(/<[^>]*>/g, "");
-
-      document.body.appendChild(temp);
-      temp.select();
-      document.execCommand("copy");
-      document.body.removeChild(temp);
-
-      return true;
-
-    } catch (e) {
-      console.error("Copy failed completely", e);
-      return false;
-    }
+    console.error("Copy error:", err);
+    return false;
   }
 }
 
@@ -96,11 +86,11 @@ export default function StoryPage({
 
         <div className={styles.actions}>
 
-          {/* COPY BUTTON */}
+          {/* COPY */}
           <button
             className={styles.iconBtn}
-            onClick={async () => {
-              const ok = await copyToClipboard(story.content);
+            onClick={() => {
+              const ok = copyVisibleStory();
 
               if (!ok) {
                 alert("Copy failed");
@@ -110,7 +100,7 @@ export default function StoryPage({
             <FaCopy />
           </button>
 
-          {/* EDIT BUTTON */}
+          {/* EDIT */}
           <Link
             href={`/write?edit=${story.id}&folder=${folder}`}
             className={styles.iconBtn}
@@ -123,6 +113,7 @@ export default function StoryPage({
 
       {/* CONTENT */}
       <div
+        id="story-content"
         className={styles.content}
         dangerouslySetInnerHTML={{
           __html: story.content,
@@ -141,9 +132,7 @@ export default function StoryPage({
             <FaArrowLeft />
             Previous
           </Link>
-        ) : (
-          <div />
-        )}
+        ) : <div />}
 
         {/* NEXT */}
         {nextId ? (
@@ -154,10 +143,7 @@ export default function StoryPage({
             Next
             <FaArrowRight />
           </Link>
-        ) : (
-          <div />
-        )}
-
+        ) : <div />}
       </div>
 
     </div>
@@ -167,10 +153,7 @@ export default function StoryPage({
 /* ---------------- SSR ---------------- */
 export async function getServerSideProps(ctx) {
 
-  const username = getCookie(
-    "username",
-    ctx.req.headers.cookie
-  );
+  const username = getCookie("username", ctx.req.headers.cookie);
 
   if (!username) {
     return {
@@ -185,6 +168,7 @@ export async function getServerSideProps(ctx) {
 
   try {
 
+    /* STORY */
     const storyRef = doc(
       db,
       "netstore",
@@ -214,6 +198,7 @@ export async function getServerSideProps(ctx) {
       ...storySnap.data(),
     };
 
+    /* EPISODES FOR NAVIGATION */
     const episodesRef = collection(
       db,
       "netstore",
