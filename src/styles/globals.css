@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
+/* ---------------- SYSTEM THEME VARIABLES ---------------- */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: canvas;
+  --foreground: canvastext;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* fallback if browser doesn't support system keywords */
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +21,79 @@
   }
 }
 
-body {
+/* ---------------- THEME MAPPING ---------------- */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: system-ui, Arial, sans-serif;
+  --font-mono: ui-monospace, monospace;
+}
+
+/* ---------------- BASE ---------------- */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+
+  font-family: system-ui, Arial, Helvetica, sans-serif;
+
+  /* system feel */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* smooth theme transition */
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ---------------- DISABLE TEXT SELECTION (LIMITED) ---------------- */
+/* ⚠️ Note: can be bypassed by dev tools, extensions, etc. */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* allow selection ONLY inside editor/story content */
+.content,
+.editor,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ---------------- DISABLE ZOOM (MOBILE BASIC CONTROL) ---------------- */
+/* ⚠️ still bypassable on modern browsers */
+html {
+  touch-action: manipulation;
+}
+
+body {
+  overscroll-behavior: none;
+}
+
+/* prevent double tap zoom on buttons */
+button, a {
+  touch-action: manipulation;
+}
+
+/* ---------------- PRINT PREVENTION (LIMITED) ---------------- */
+@media print {
+  body {
+    display: none;
+  }
+}
+
+/* ---------------- BASIC SCREENSHOT DETERRENTS (NOT GUARANTEED) ---------------- */
+/* disables drag selection visuals + right click feel */
+img, div {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* disable image drag */
+img {
+  pointer-events: none;
 }
