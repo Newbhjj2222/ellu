@@ -1,75 +1,167 @@
-import { useEffect, useState } from "react";
-import Head from "next/head";
+import styles from "../styles/library.module.css";
 import Link from "next/link";
-import { db } from "../components/firebase";
-import { collection, getDocs } from "firebase/firestore";
-import styles from "../styles/posts.module.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import Cookies from "js-cookie";
 
-export async function getServerSideProps() {
-  const snapshot = await getDocs(collection(db, "posts"));
-  const posts = snapshot.docs.map(doc => {
-    const data = doc.data();
-    const contentText = data.content.replace(/<[^>]+>/g, "");
-    return {
-      id: doc.id,
-      title: data.title || "",
-      image: data.image || "",
-      summary: contentText.slice(0, 150) + (contentText.length > 150 ? "..." : ""),
-    };
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+} from "firebase/firestore";
+
+import { db } from "../components/firebase";
+
+import {
+  FaBook,
+  FaPen,
+  FaEye,
+} from "react-icons/fa";
+
+/* ---------------------------
+   SIMPLE COOKIE PARSER (SSR)
+----------------------------*/
+function parseCookies(cookieHeader = "") {
+  const cookies = {};
+
+  cookieHeader.split(";").forEach((cookie) => {
+    const [key, ...v] = cookie.trim().split("=");
+    if (!key) return;
+    cookies[key] = decodeURIComponent(v.join("="));
   });
 
-  return {
-    props: { posts },
-  };
+  return cookies;
 }
 
-export default function Home({ posts }) {
-  const [isChecking, setIsChecking] = useState(true);
-
-  useEffect(() => {
-    const username = Cookies.get("username");
-    if (!username) {
-      window.location.href = "/register"; // redirect niba username idahari
-    } else {
-      setIsChecking(false); // user afite username, tugaragaze page
-    }
-  }, []);
-
-  if (isChecking) return null; // ntitwerekane page mbere yo gusuzuma cookie
+export default function Library({ folders }) {
 
   return (
-    <>
-      <Head>
-        <title>Elluminate Blog - All Posts</title>
-        <meta
-          name="description"
-          content="Ba umutunzi, icyamamare, umunyabwenge hamwe numuryango wacu. elluminate Rwanda turaguha ubutunzi , imbaraga namahirwe. iyandikishe nonaha mu muryango wacu."
-        />
-        <meta name="keywords" content="elluminate, ubutunzi, elluminate Rwanda, tutorials, elluminate" />
-        <meta property="og:title" content="Elluminate Blog - All Posts" />
-        <meta property="og:description" content="soma ibyerekeye elluminate Rwanda umuryango utanga ubutunzi ku isi yose." />
-        <meta property="og:type" content="website" />
-      </Head>
-      <Header />
-      <div className={styles.container}>
-        <h1>ELLUMINATE RWANDA</h1>
-        <div className={styles.postsGrid}>
-          {posts.map(post => (
-            <div key={post.id} className={styles.postCard}>
-              {post.image && <img src={post.image} alt={post.title} className={styles.postImage} />}
-              <h2>{post.title}</h2>
-              <p>{post.summary}</p>
-              <Link href={`/posts/${post.id}`}>
-                <button className={styles.readMoreBtn}>Read More</button>
-              </Link>
-            </div>
-          ))}
-        </div>
+
+    <div className={styles.container}>
+
+      <div className={styles.header}>
+        <h1>Your Stories</h1>
       </div>
-      <Footer />
-    </>
+
+      <div className={styles.grid}>
+
+        {folders.map((folder, index) => (
+
+          <div key={index} className={styles.card}>
+
+            <div className={styles.icon}>
+              <FaBook />
+            </div>
+
+            <h2>{folder.name}</h2>
+
+            <p>
+              {folder.count} episode(s)
+            </p>
+
+            <div className={styles.actions}>
+
+              {/* CONTINUE WRITING */}
+              <Link
+                href={`/write?folder=${folder.name}`}
+                className={styles.writeBtn}
+              >
+                <FaPen />
+                Continue
+              </Link>
+
+              {/* VIEW STORY */}
+              <Link
+                href={`/story/${folder.name}/${folder.firstEpisode}`}
+                className={styles.viewBtn}
+              >
+                <FaEye />
+                View
+              </Link>
+
+            </div>
+
+          </div>
+
+        ))}
+
+      </div>
+
+    </div>
+
   );
+}
+
+/* ---------------------------
+   SSR
+----------------------------*/
+export async function getServerSideProps(ctx) {
+
+  const cookies = parseCookies(
+    ctx.req.headers.cookie
+  );
+
+  const username = cookies.username;
+
+  if (!username) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  const userDoc = doc(
+    db,
+    "netstore",
+    username
+  );
+
+  const userSnap = await getDoc(userDoc);
+
+  if (!userSnap.exists()) {
+    return {
+      props: {
+        folders: [],
+      },
+    };
+  }
+
+  const data = userSnap.data();
+
+  const folderNames = data.folders || [];
+
+  const folders = [];
+
+  for (const folderName of folderNames) {
+
+    const folderRef = collection(
+      userDoc,
+      folderName
+    );
+
+    const snapshot = await getDocs(folderRef);
+
+    const episodes = [];
+
+    snapshot.forEach((doc) => {
+      episodes.push(doc.id);
+    });
+
+    if (episodes.length > 0) {
+
+      folders.push({
+        name: folderName,
+        count: episodes.length,
+        firstEpisode: episodes[0],
+      });
+
+    }
+
+  }
+
+  return {
+    props: {
+      folders,
+    },
+  };
 }
