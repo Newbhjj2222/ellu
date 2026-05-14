@@ -5,8 +5,10 @@ import Cookies from "js-cookie";
 import {
   doc,
   setDoc,
+  addDoc,
   collection,
   serverTimestamp,
+  getDoc,
 } from "firebase/firestore";
 
 import { db } from "../components/firebase";
@@ -23,7 +25,6 @@ import {
 export default function Write() {
 
   const editorRef = useRef(null);
-
   const toolbarRef = useRef(null);
 
   const [username, setUsername] = useState("");
@@ -33,7 +34,6 @@ export default function Write() {
   const [selectedFolder, setSelectedFolder] = useState("");
 
   const [showToolbar, setShowToolbar] = useState(false);
-
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolder, setNewFolder] = useState("");
 
@@ -42,95 +42,37 @@ export default function Write() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // LOAD USER + DRAFTS
+  /* ---------------- LOAD USER ---------------- */
   useEffect(() => {
 
     const savedUsername = Cookies.get("username");
 
-    if (savedUsername) {
-      setUsername(savedUsername);
-    }
+    if (savedUsername) setUsername(savedUsername);
 
-    const draft = Cookies.get("draft_story");
-    const draftTitle = Cookies.get("draft_title");
+    const loadFolders = async () => {
 
-    if (draft && editorRef.current) {
-      editorRef.current.innerHTML = draft;
-    }
+      if (!savedUsername) return;
 
-    if (draftTitle) {
-      setEpisodeTitle(draftTitle);
-    }
+      const userRef = doc(db, "netstore", savedUsername);
+      const snap = await getDoc(userRef);
 
-    const savedFolders = Cookies.get("story_folders");
-
-    if (savedFolders) {
-      setFolders(JSON.parse(savedFolders));
-    }
-
-  }, []);
-
-  // AUTO SAVE
-  useEffect(() => {
-
-    const interval = setInterval(() => {
-
-      if (editorRef.current) {
-
-        Cookies.set(
-          "draft_story",
-          editorRef.current.innerHTML,
-          { expires: 7 }
-        );
-
-        Cookies.set(
-          "draft_title",
-          episodeTitle,
-          { expires: 7 }
-        );
-
-      }
-
-    }, 3000);
-
-    return () => clearInterval(interval);
-
-  }, [episodeTitle]);
-
-  // CLOSE TOOLBAR + MODALS OUTSIDE CLICK
-  useEffect(() => {
-
-    const closeThings = (e) => {
-
-      if (
-        toolbarRef.current &&
-        !toolbarRef.current.contains(e.target)
-      ) {
-        setShowToolbar(false);
-      }
-
-      if (e.target.classList.contains(styles.modalOverlay)) {
-        setShowFolderModal(false);
-        setShowSaveModal(false);
+      if (snap.exists()) {
+        setFolders(snap.data().folders || []);
       }
 
     };
 
-    document.addEventListener("mousedown", closeThings);
-
-    return () => {
-      document.removeEventListener("mousedown", closeThings);
-    };
+    loadFolders();
 
   }, []);
 
-  // FORMAT TEXT
+  /* ---------------- FORMAT TEXT ---------------- */
   const formatText = (command, value = null) => {
     document.execCommand(command, false, value);
   };
 
-  // CREATE FOLDER
-  const createFolder = () => {
+  /* ---------------- CREATE FOLDER (DB + STATE) ---------------- */
+  const createFolder = async () => {
 
     if (!newFolder.trim()) return;
 
@@ -138,85 +80,76 @@ export default function Write() {
 
     setFolders(updated);
 
-    Cookies.set(
-      "story_folders",
-      JSON.stringify(updated),
-      { expires: 30 }
-    );
+    const userRef = doc(db, "netstore", username);
+
+    await setDoc(userRef, {
+      folders: updated,
+    }, { merge: true });
 
     setSelectedFolder(newFolder);
-
     setNewFolder("");
-
     setShowFolderModal(false);
 
   };
 
-  // SAVE STORY
+  /* ---------------- SAVE STORY (FULL DB STORAGE) ---------------- */
   const saveStory = async () => {
 
     const content = editorRef.current?.innerHTML;
 
-    if (!selectedFolder) {
-      return setMessage("Select folder.");
-    }
-
-    if (!episodeTitle || !content) {
-      return setMessage("Complete story first.");
-    }
+    if (!username) return setMessage("No user found.");
+    if (!selectedFolder) return setMessage("Select folder.");
+    if (!episodeTitle || !content) return setMessage("Complete story first.");
 
     try {
 
       setLoading(true);
 
-      const userDoc = doc(
+      // MAIN STORY COLLECTION STRUCTURE:
+      // netstore/{username}/stories/{folder}/episodes
+
+      const storyRef = collection(
         db,
         "netstore",
-        username
+        username,
+        "stories",
+        selectedFolder,
+        "episodes"
       );
 
-      const folderCollection = collection(
-        userDoc,
-        selectedFolder
-      );
+      await addDoc(storyRef, {
 
-      const episodeDoc = doc(
-        folderCollection,
-        episodeTitle
-      );
+        username,              // ✔ user
+        folder: selectedFolder,// ✔ folder
+        title: episodeTitle,   // ✔ title
+        content,               // ✔ full story
 
-      await setDoc(episodeDoc, {
-        title: episodeTitle,
-        content,
-        folder: selectedFolder,
-        author: username,
         createdAt: serverTimestamp(),
+
       });
 
-      setMessage("Story saved.");
+      setMessage("Story saved successfully.");
 
-Cookies.remove("draft_story");
-Cookies.remove("draft_title");
+      // reset editor
+      if (editorRef.current) {
+        editorRef.current.innerHTML = "";
+      }
 
-if (editorRef.current) {
-  editorRef.current.innerHTML = "";
-}
+      setEpisodeTitle("");
+      setSelectedFolder("");
 
-setEpisodeTitle("");
-setSelectedFolder("");
+      Cookies.remove("draft_story");
+      Cookies.remove("draft_title");
 
-setShowSaveModal(false);
+      setShowSaveModal(false);
 
     } catch (err) {
 
       console.error(err);
-
       setMessage("Error saving story.");
 
     } finally {
-
       setLoading(false);
-
     }
 
   };
@@ -226,53 +159,28 @@ setShowSaveModal(false);
     <div className={styles.container}>
 
       {/* TOP BAR */}
-
       <div className={styles.topBar}>
 
         <input
           type="text"
-          placeholder="Enter episode title..."
+          placeholder="Episode title..."
           className={styles.titleInput}
           value={episodeTitle}
-          onChange={(e) =>
-            setEpisodeTitle(e.target.value)
-          }
+          onChange={(e) => setEpisodeTitle(e.target.value)}
         />
 
         <div className={styles.actions}>
 
-          {/* TOOLBAR BUTTON */}
-
-          <button
-            className={styles.iconBtn}
-            onClick={() =>
-              setShowToolbar(!showToolbar)
-            }
-          >
+          <button onClick={() => setShowToolbar(!showToolbar)}>
             <FaPalette />
           </button>
 
-          {/* CREATE FOLDER */}
-
-          <button
-            className={styles.iconBtn}
-            onClick={() =>
-              setShowFolderModal(true)
-            }
-          >
+          <button onClick={() => setShowFolderModal(true)}>
             <FaFolderPlus />
           </button>
 
-          {/* SAVE */}
-
-          <button
-            className={styles.saveBtn}
-            onClick={() =>
-              setShowSaveModal(true)
-            }
-          >
+          <button onClick={() => setShowSaveModal(true)}>
             <FaSave />
-            Save
           </button>
 
         </div>
@@ -280,79 +188,36 @@ setShowSaveModal(false);
       </div>
 
       {/* TOOLBAR */}
-
       {showToolbar && (
 
-        <div
-          ref={toolbarRef}
-          className={styles.toolbar}
-        >
+        <div ref={toolbarRef} className={styles.toolbar}>
 
-          <button
-            title="Bold"
-            onClick={() =>
-              formatText("bold")
-            }
-          >
+          <button onClick={() => formatText("bold")}>
             <FaBold />
           </button>
 
-          <button
-            title="Italic"
-            onClick={() =>
-              formatText("italic")
-            }
-          >
+          <button onClick={() => formatText("italic")}>
             <FaItalic />
           </button>
 
-          <button
-            title="Underline"
-            onClick={() =>
-              formatText("underline")
-            }
-          >
+          <button onClick={() => formatText("underline")}>
             <FaUnderline />
           </button>
-
-          <input
-            type="color"
-            title="Text Color"
-            onChange={(e) =>
-              formatText(
-                "foreColor",
-                e.target.value
-              )
-            }
-          />
 
         </div>
 
       )}
 
       {/* EDITOR */}
-
       <div
-  ref={editorRef}
-  className={styles.editor}
-  contentEditable
-  suppressContentEditableWarning={true}
-  data-placeholder="Start writing your story here..."
-  onInput={() => {
+        ref={editorRef}
+        className={styles.editor}
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder="Start writing your story here..."
+      />
 
-    if (
-      editorRef.current.innerHTML === "<br>"
-    ) {
-
-      editorRef.current.innerHTML = "";
-
-    }
-
-  }}
-/>
-
-      {/* CREATE FOLDER MODAL */}
-
+      {/* CREATE FOLDER */}
       {showFolderModal && (
 
         <div className={styles.modalOverlay}>
@@ -362,20 +227,13 @@ setShowSaveModal(false);
             <h3>Create Folder</h3>
 
             <input
-              type="text"
-              placeholder="Enter folder name..."
-              className={styles.modalInput}
+              placeholder="Folder name"
               value={newFolder}
-              onChange={(e) =>
-                setNewFolder(e.target.value)
-              }
+              onChange={(e) => setNewFolder(e.target.value)}
             />
 
-            <button
-              className={styles.modalBtn}
-              onClick={createFolder}
-            >
-              Create Folder
+            <button onClick={createFolder}>
+              Create
             </button>
 
           </div>
@@ -384,8 +242,7 @@ setShowSaveModal(false);
 
       )}
 
-      {/* SAVE MODAL */}
-
+      {/* SAVE STORY */}
       {showSaveModal && (
 
         <div className={styles.modalOverlay}>
@@ -395,38 +252,24 @@ setShowSaveModal(false);
             <h3>Save Story</h3>
 
             <select
-              className={styles.select}
               value={selectedFolder}
-              onChange={(e) =>
-                setSelectedFolder(e.target.value)
-              }
+              onChange={(e) => setSelectedFolder(e.target.value)}
             >
 
               <option value="">
-                Select folder...
+                Select folder
               </option>
 
-              {folders.map((folder, index) => (
-
-                <option
-                  key={index}
-                  value={folder}
-                >
-                  {folder}
+              {folders.map((f, i) => (
+                <option key={i} value={f}>
+                  {f}
                 </option>
-
               ))}
 
             </select>
 
-            <button
-              className={styles.modalBtn}
-              onClick={saveStory}
-              disabled={loading}
-            >
-              {loading
-                ? "Saving..."
-                : "Save Story"}
+            <button onClick={saveStory} disabled={loading}>
+              {loading ? "Saving..." : "Save Story"}
             </button>
 
           </div>
@@ -436,13 +279,10 @@ setShowSaveModal(false);
       )}
 
       {/* MESSAGE */}
-
       {message && (
-
         <div className={styles.message}>
           {message}
         </div>
-
       )}
 
     </div>
