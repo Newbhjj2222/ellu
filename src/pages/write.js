@@ -195,10 +195,17 @@ export default function Write() {
 
       setMessage("Story saved.");
 
-      Cookies.remove("draft_story");
-      Cookies.remove("draft_title");
+Cookies.remove("draft_story");
+Cookies.remove("draft_title");
 
-      setShowSaveModal(false);
+if (editorRef.current) {
+  editorRef.current.innerHTML = "";
+}
+
+setEpisodeTitle("");
+setSelectedFolder("");
+
+setShowSaveModal(false);
 
     } catch (err) {
 
