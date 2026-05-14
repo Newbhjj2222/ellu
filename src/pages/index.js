@@ -2,6 +2,8 @@ import styles from "../styles/library.module.css";
 import Link from "next/link";
 
 import {
+  doc,
+  getDoc,
   collection,
   getDocs,
 } from "firebase/firestore";
@@ -9,66 +11,91 @@ import {
 import { db } from "../components/firebase";
 
 import {
-  FaBook,
+  FaUser,
   FaFolder,
+  FaBook,
   FaEye,
 } from "react-icons/fa";
 
-export default function Library({ stories }) {
+/* ---------------- COOKIE PARSER ---------------- */
+function getCookie(name, cookieHeader = "") {
+
+  if (!cookieHeader) return null;
+
+  const match = cookieHeader
+    .split(";")
+    .map(c => c.trim())
+    .find(c => c.startsWith(name + "="));
+
+  if (!match) return null;
+
+  return decodeURIComponent(match.split("=")[1]);
+}
+
+export default function Library({ username, data }) {
 
   return (
 
     <div className={styles.container}>
 
+      {/* HEADER */}
       <div className={styles.header}>
-        <h1>NetStore Library (All Stories)</h1>
+
+        <div className={styles.userBox}>
+          <FaUser />
+          <span>{username}</span>
+        </div>
+
+        <h1>Your Library</h1>
+
       </div>
 
+      {/* CONTENT */}
       <div className={styles.grid}>
 
-        {stories.length === 0 && (
-          <p>No stories found in database.</p>
+        {data.length === 0 && (
+          <p>No folders or stories found.</p>
         )}
 
-        {stories.map((user, i) => (
+        {data.map((folder, i) => (
 
           <div key={i} className={styles.card}>
 
-            <div className={styles.userTitle}>
-              <h2>{user.username}</h2>
+            {/* FOLDER TITLE */}
+            <div className={styles.folderHeader}>
+              <FaFolder />
+              <h2>{folder.name}</h2>
             </div>
 
-            {user.folders.map((folder, j) => (
+            <p className={styles.count}>
+              {folder.stories.length} story(s)
+            </p>
 
-              <div key={j} className={styles.folderBlock}>
+            {/* STORIES */}
+            <div className={styles.storyList}>
 
-                <div className={styles.folderHeader}>
-                  <FaFolder />
-                  <span>{folder.name}</span>
+              {folder.stories.map((story, j) => (
+
+                <div key={j} className={styles.storyItem}>
+
+                  <FaBook />
+
+                  <span className={styles.storyTitle}>
+                    {story.title}
+                  </span>
+
+                  <Link
+                    href={`/story/${folder.name}/${story.id}`}
+                    className={styles.viewBtn}
+                  >
+                    <FaEye />
+                  </Link>
+
                 </div>
 
-                {folder.episodes.map((ep, k) => (
+              ))}
 
-                  <div key={k} className={styles.episodeRow}>
-
-                    <FaBook />
-
-                    <span>{ep.title}</span>
-
-                    <Link
-                      href={`/story/${folder.name}/${ep.id}`}
-                      className={styles.viewBtn}
-                    >
-                      <FaEye />
-                    </Link>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            ))}
+            </div>
 
           </div>
 
@@ -82,52 +109,63 @@ export default function Library({ stories }) {
 }
 
 /* ---------------- SSR ---------------- */
-export async function getServerSideProps() {
+export async function getServerSideProps(ctx) {
+
+  const username = getCookie(
+    "username",
+    ctx.req.headers.cookie
+  );
+
+  if (!username) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
 
   try {
 
-    const netstoreRef = collection(db, "netstore");
-    const usersSnap = await getDocs(netstoreRef);
+    const userRef = doc(db, "netstore", username);
+    const userSnap = await getDoc(userRef);
 
-    const stories = await Promise.all(
+    if (!userSnap.exists()) {
+      return {
+        props: {
+          username,
+          data: [],
+        },
+      };
+    }
 
-      usersSnap.docs.map(async (userDoc) => {
+    const userData = userSnap.data();
 
-        const username = userDoc.id;
+    const folderNames = userData.folders || [];
 
-        const data = userDoc.data();
-        const folderNames = data.folders || [];
+    const data = await Promise.all(
 
-        const folders = await Promise.all(
+      folderNames.map(async (folderName) => {
 
-          folderNames.map(async (folderName) => {
-
-            const folderRef = collection(
-              db,
-              "netstore",
-              username,
-              folderName
-            );
-
-            const snap = await getDocs(folderRef);
-
-            const episodes = snap.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
-
-            return {
-              name: folderName,
-              episodes,
-            };
-
-          })
-
+        const storiesRef = collection(
+          db,
+          "netstore",
+          username,
+          "stories",
+          folderName,
+          "episodes"
         );
 
+        const snap = await getDocs(storiesRef);
+
+        const stories = snap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
         return {
-          username,
-          folders: folders.filter(f => f.episodes.length > 0),
+          name: folderName,
+          stories,
         };
 
       })
@@ -136,7 +174,8 @@ export async function getServerSideProps() {
 
     return {
       props: {
-        stories,
+        username,
+        data: data.filter(f => f.stories.length > 0),
       },
     };
 
@@ -146,7 +185,8 @@ export async function getServerSideProps() {
 
     return {
       props: {
-        stories: [],
+        username,
+        data: [],
       },
     };
 
