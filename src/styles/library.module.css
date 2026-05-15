@@ -1,38 +1,37 @@
-/* ================= CONTAINER ================= */
-
 .container {
   min-height: 100vh;
   padding: 24px;
   background: var(--background);
   color: var(--foreground);
+  position: relative;
 }
 
-/* ================= TOP HEADER ================= */
+/* ================= HEADER ================= */
 
 .top {
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
 
 .top h1 {
   font-size: 28px;
   margin: 0;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .top p {
   margin-top: 6px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255,255,255,0.6);
 }
 
-/* ================= EMPTY STATE ================= */
+/* ================= EMPTY ================= */
 
 .empty {
   padding: 40px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6);
 }
 
 /* ================= GRID ================= */
@@ -46,26 +45,31 @@
 /* ================= CARD ================= */
 
 .card {
-  position: relative;
-
   padding: 18px;
   border-radius: 18px;
 
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
 
   transition: 0.25s ease;
-
+  position: relative;
   overflow: hidden;
 }
 
-/* hover effect */
 .card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-5px);
+  border-color: rgba(255,255,255,0.2);
 }
 
-/* ================= ICON BOX ================= */
+/* 🔥 DIFFERENT COLORS PER CARD */
+
+.card0 { box-shadow: 0 0 25px rgba(109,93,252,0.15); }
+.card1 { box-shadow: 0 0 25px rgba(70,194,255,0.15); }
+.card2 { box-shadow: 0 0 25px rgba(255,99,132,0.12); }
+.card3 { box-shadow: 0 0 25px rgba(255,206,86,0.12); }
+.card4 { box-shadow: 0 0 25px rgba(75,192,192,0.12); }
+
+/* ================= ICON ================= */
 
 .iconBox {
   width: 50px;
@@ -77,29 +81,22 @@
 
   border-radius: 14px;
 
-  background: linear-gradient(
-    135deg,
-    #6d5dfc,
-    #46c2ff
-  );
-
+  background: linear-gradient(135deg,#6d5dfc,#46c2ff);
   color: white;
 
   font-size: 20px;
-
   margin-bottom: 14px;
 }
 
-/* ================= FOLDER NAME ================= */
+/* ================= NAME ================= */
 
 .folderName {
   font-size: 18px;
-  font-weight: 600;
-
-  margin: 0 0 10px 0;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
-/* ================= STORY COUNT ================= */
+/* ================= COUNT ================= */
 
 .storyCount {
   display: flex;
@@ -107,85 +104,90 @@
   gap: 8px;
 
   font-size: 13px;
-
-  color: rgba(255, 255, 255, 0.65);
-
-  margin-bottom: 18px;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 16px;
 }
 
-/* ================= VIEW BUTTON ================= */
+/* ================= BUTTON ================= */
 
 .iconBtn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
 
   padding: 10px 14px;
-
   border-radius: 12px;
 
-  background: white;
-  color: black;
+  background: #fff;
+  color: #000;
 
   text-decoration: none;
-
   font-weight: 600;
-  font-size: 13px;
 
-  transition: 0.2s ease;
+  transition: 0.2s;
 }
 
 .iconBtn:hover {
   transform: scale(1.05);
 }
 
-/* ================= DISABLED BUTTON ================= */
-
 .iconBtnDisabled {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
 
   padding: 10px 14px;
-
   border-radius: 12px;
 
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.4);
-
-  font-size: 13px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4);
 
   cursor: not-allowed;
+}
+
+/* ================= FLOATING BUTTON ================= */
+
+.floatingBtn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+
+  width: 56px;
+  height: 56px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: linear-gradient(135deg,#ff6b6b,#ff8e53);
+  color: white;
+
+  font-size: 20px;
+
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+
+  transition: 0.2s;
+}
+
+.floatingBtn:hover {
+  transform: scale(1.1);
 }
 
 /* ================= RESPONSIVE ================= */
 
 @media (max-width: 768px) {
 
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
   .top h1 {
     font-size: 22px;
   }
 
-  .grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 14px;
-  }
-
-  .card {
-    padding: 14px;
-  }
-
-  .iconBox {
-    width: 44px;
-    height: 44px;
-    font-size: 18px;
-  }
-
 }
-
-/* ================= SMALL PHONES ================= */
 
 @media (max-width: 420px) {
 
