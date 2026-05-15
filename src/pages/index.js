@@ -14,6 +14,9 @@ import {
   getDoc,
   collection,
   getDocs,
+  query,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 
 import { db } from "../components/firebase";
@@ -51,7 +54,7 @@ export default function Library({
 
       </div>
 
-      {/* EMPTY */}
+      {/* EMPTY STATE */}
 
       {folders.length === 0 ? (
 
@@ -76,13 +79,13 @@ export default function Library({
                 <FaFolder />
               </div>
 
-              {/* NAME */}
+              {/* FOLDER NAME */}
 
               <h2 className={styles.folderName}>
                 {folder.folderName}
               </h2>
 
-              {/* COUNT */}
+              {/* STORY COUNT */}
 
               <div className={styles.storyCount}>
                 <FaBookOpen />
@@ -91,15 +94,25 @@ export default function Library({
                 </span>
               </div>
 
-              {/* VIEW BUTTON (FIXED ROUTE) */}
+              {/* OPEN FIRST STORY */}
 
-              <Link
-  href={`/story/${folder.folderName}/${story.id}`}
-  className={styles.iconBtn}
-  title="View story"
->
-  <FaEye />
-</Link>
+              {folder.firstStoryId ? (
+
+                <Link
+                  href={`/story/${folder.folderName}/${folder.firstStoryId}`}
+                  className={styles.iconBtn}
+                  title="Open first story"
+                >
+                  <FaEye />
+                </Link>
+
+              ) : (
+
+                <div className={styles.iconBtnDisabled}>
+                  <FaEye />
+                </div>
+
+              )}
 
             </div>
 
@@ -121,6 +134,8 @@ export async function getServerSideProps({ req }) {
 
   try {
 
+    /* READ COOKIE */
+
     const parsedCookies = cookie.parse(
       req.headers.cookie || ""
     );
@@ -138,6 +153,8 @@ export async function getServerSideProps({ req }) {
       };
 
     }
+
+    /* USER DOC */
 
     const userRef = doc(
       db,
@@ -163,6 +180,8 @@ export async function getServerSideProps({ req }) {
 
     const folders = [];
 
+    /* LOOP FOLDERS */
+
     for (const folderName of foldersArray) {
 
       const episodesRef = collection(
@@ -174,14 +193,36 @@ export async function getServerSideProps({ req }) {
         "episodes"
       );
 
-      const episodesSnap =
+      /* GET FIRST STORY (LATEST) */
+
+      const q = query(
+        episodesRef,
+        orderBy("createdAt", "desc"),
+        limit(1)
+      );
+
+      const firstSnap = await getDocs(q);
+
+      let firstStoryId = null;
+
+      if (!firstSnap.empty) {
+        firstStoryId =
+          firstSnap.docs[0].id;
+      }
+
+      /* COUNT ALL STORIES */
+
+      const allSnap =
         await getDocs(episodesRef);
 
       folders.push({
 
         folderName,
+
         totalStories:
-          episodesSnap.size,
+          allSnap.size,
+
+        firstStoryId,
 
       });
 
