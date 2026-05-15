@@ -94,14 +94,12 @@ export default function Library({
               {/* VIEW BUTTON (FIXED ROUTE) */}
 
               <Link
-                href={`/folder/${folder.folderName}`}
-                className={styles.viewBtn}
-              >
-
-                <FaEye />
-                <span>View Folder</span>
-
-              </Link>
+  href={`/story/${folder.folderName}/${story.id}`}
+  className={styles.iconBtn}
+  title="View story"
+>
+  <FaEye />
+</Link>
 
             </div>
 
