@@ -1,4 +1,5 @@
 /* ---------------- GLOBAL RESET ---------------- */
+
 html, body {
   margin: 0;
   padding: 0;
@@ -11,49 +12,105 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Smooth UI behavior */
   scroll-behavior: smooth;
+
+  /* 🚫 DISABLE TEXT SELECTION GLOBALLY */
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 /* ---------------- TOUCH BEHAVIOR ---------------- */
-/* Reduces double-tap zoom delay + improves tap response */
+
 html {
   touch-action: manipulation;
 }
 
-/* Applies to whole page interactions */
 body {
   touch-action: manipulation;
-
-  /* Prevent accidental scroll chaining */
   overscroll-behavior: none;
 
-  /* Prevent font resizing weirdness on mobile */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
 /* ---------------- INTERACTIVE ELEMENTS ---------------- */
-/* Improves responsiveness of taps */
+
 button,
 a,
 input,
 textarea,
-[contenteditable="true"] {
+[contenteditable="true"],
+select {
   touch-action: manipulation;
+
+  /* keep inputs usable */
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* ---------------- LAYOUT SAFETY ---------------- */
+
 * {
   box-sizing: border-box;
+}
+
+/* ---------------- REMOVE OUTLINE JANK (clean UI) ---------------- */
+
+button,
+input,
+textarea,
+select,
+a {
+  outline: none;
+}
+
+/* optional: nicer focus for accessibility */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary, #6d5dfc);
+  outline-offset: 2px;
+}
+
+/* ---------------- PLACEHOLDER GLOBAL STYLE (optional consistency) ---------------- */
+
+::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+@media (prefers-color-scheme: light) {
+  ::placeholder {
+    color: rgba(0,0,0,0.4);
+  }
+}
+
+/* ---------------- SCROLLBAR (nice polish) ---------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(150,150,150,0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150,150,150,0.5);
 }
 
 /* ---------------- NOTE (IMPORTANT) ---------------- */
 /*
   ❗ This does NOT fully disable zoom.
   Browsers still allow pinch zoom for accessibility.
-  This only:
-  - reduces double tap zoom delay
-  - improves touch responsiveness
-  - stabilizes mobile interactions
+
+  What this adds:
+  - disables text selection globally
+  - restores selection inside inputs/editor only
+  - improves mobile responsiveness
+  - adds clean focus ring system
+  - improves scrollbar aesthetics
 */
