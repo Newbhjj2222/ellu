@@ -98,21 +98,26 @@ export default function Library({
 
               {folder.firstStoryId ? (
 
-                <Link
-                  href={`/story/${folder.folderName}/${folder.firstStoryId}`}
-                  className={styles.iconBtn}
-                  title="Open first story"
-                >
-                  <FaEye />
-                </Link>
+  <Link
+    href={`/story/${folder.folderName}/${folder.firstStoryId}`}
+    className={styles.iconBtn}
+    title="Open first story"
+  >
+    <FaEye />
+    <span>View Folder</span>
+  </Link>
 
-              ) : (
+) : (
 
-                <div className={styles.iconBtnDisabled}>
-                  <FaEye />
-                </div>
+  <div
+    className={styles.iconBtnDisabled}
+    title="No stories available in this folder"
+  >
+    <FaEye />
+    <span>Empty</span>
+  </div>
 
-              )}
+)}
 
             </div>
 
