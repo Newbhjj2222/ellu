@@ -1,4 +1,4 @@
-/* ================= BASE ================= */
+/* ================= CONTAINER ================= */
 
 .container {
   min-height: 100vh;
@@ -22,11 +22,14 @@
   gap: 12px;
 
   padding: 12px;
+
   border-radius: 14px;
 
   background: var(--card);
   border: 1px solid var(--border);
 }
+
+/* ================= TITLE INPUT ================= */
 
 .titleInput {
   flex: 1;
@@ -39,12 +42,12 @@
   outline: none;
 
   background: var(--inputBg);
-  color: var(--text);
+  color: var(--foreground);
 
   font-size: 15px;
 }
 
-/* ================= ACTIONS ================= */
+/* ================= ACTION BUTTONS ================= */
 
 .actions {
   display: flex;
@@ -56,6 +59,7 @@
   height: 42px;
 
   border-radius: 10px;
+
   border: none;
 
   background: var(--btnBg);
@@ -68,7 +72,7 @@
 
 .actions button:hover {
   background: var(--primary);
-  color: white;
+  color: #fff;
   transform: scale(1.05);
 }
 
@@ -93,9 +97,9 @@
 
   overflow-y: auto;
 
-  position: relative;
+  color: var(--foreground);
 
-  color: var(--text);
+  position: relative;
 }
 
 /* ================= PLACEHOLDER ================= */
@@ -139,6 +143,7 @@
   height: 38px;
 
   border-radius: 10px;
+
   border: none;
 
   background: var(--btnBg);
@@ -151,7 +156,7 @@
 
 .toolbar button:hover {
   background: var(--primary);
-  color: white;
+  color: #fff;
 }
 
 /* ================= MODAL ================= */
@@ -197,7 +202,7 @@
   outline: none;
 
   background: var(--inputBg);
-  color: var(--text);
+  color: var(--foreground);
 }
 
 .modal button {
@@ -233,7 +238,7 @@
   background: var(--card);
   border: 1px solid var(--border);
 
-  color: var(--text);
+  color: var(--foreground);
 
   font-size: 13px;
 }
@@ -260,6 +265,7 @@
     flex-wrap: wrap;
     justify-content: center;
   }
+
 }
 
 @media (max-width: 420px) {
@@ -272,4 +278,5 @@
     width: 38px;
     height: 38px;
   }
+
 }
