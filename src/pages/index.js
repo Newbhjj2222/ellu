@@ -4,13 +4,18 @@ import cookie from "cookie";
 import styles from "../styles/library.module.css";
 
 import {
+  doc,
+  getDoc,
   collection,
   getDocs,
 } from "firebase/firestore";
 
 import { db } from "../components/firebase";
 
-export default function Library({ username, stories }) {
+export default function Library({
+  username,
+  foldersWithStories,
+}) {
 
   if (!username) {
 
@@ -26,21 +31,11 @@ export default function Library({ username, stories }) {
 
     <div className={styles.container}>
 
-      {/* TOP */}
       <div className={styles.top}>
-
-        <h1>
-          {username}'s Library
-        </h1>
-
-        <p>
-          {stories.length} stories found
-        </p>
-
+        <h1>{username}'s Library</h1>
       </div>
 
-      {/* EMPTY */}
-      {stories.length === 0 ? (
+      {foldersWithStories.length === 0 ? (
 
         <div className={styles.empty}>
           No stories available.
@@ -48,44 +43,62 @@ export default function Library({ username, stories }) {
 
       ) : (
 
-        <div className={styles.grid}>
+        foldersWithStories.map((folder, index) => (
 
-          {stories.map((story) => (
+          <div
+            key={index}
+            className={styles.folderBox}
+          >
 
-            <div
-              key={story.id}
-              className={styles.card}
-            >
+            <h2 className={styles.folderTitle}>
+              📁 {folder.folderName}
+            </h2>
 
-              <div className={styles.folder}>
-                📁 {story.folder}
+            {folder.stories.length === 0 ? (
+
+              <div className={styles.noStories}>
+                Empty folder
               </div>
 
-              <h2 className={styles.storyTitle}>
-                {story.title}
-              </h2>
+            ) : (
 
-              <div
-                className={styles.preview}
-                dangerouslySetInnerHTML={{
-                  __html:
-                    story.content.substring(0, 250) + "...",
-                }}
-              />
+              <div className={styles.grid}>
 
-              <div className={styles.bottom}>
+                {folder.stories.map((story) => (
 
-                <span className={styles.date}>
-                  {story.createdAt}
-                </span>
+                  <div
+                    key={story.id}
+                    className={styles.card}
+                  >
+
+                    <h3>
+                      {story.title}
+                    </h3>
+
+                    <div
+                      className={styles.preview}
+                      dangerouslySetInnerHTML={{
+                        __html:
+                          story.content.substring(0, 250)
+                          + "...",
+                      }}
+                    />
+
+                    <span className={styles.date}>
+                      {story.createdAt}
+                    </span>
+
+                  </div>
+
+                ))}
 
               </div>
 
-            </div>
+            )}
 
-          ))}
+          </div>
 
-        </div>
+        ))
 
       )}
 
@@ -95,7 +108,7 @@ export default function Library({ username, stories }) {
 
 }
 
-/* ========================= SSR ========================= */
+/* ================= SSR ================= */
 
 export async function getServerSideProps({ req }) {
 
@@ -110,40 +123,54 @@ export async function getServerSideProps({ req }) {
     const username =
       parsedCookies.username || null;
 
-    /* NO USER */
-
     if (!username) {
 
       return {
 
         props: {
           username: null,
-          stories: [],
+          foldersWithStories: [],
         },
 
       };
 
     }
 
-    const stories = [];
+    /* GET USER DOC */
 
-    /* GET ALL FOLDERS */
-
-    const foldersRef = collection(
+    const userRef = doc(
       db,
       "netstore",
-      username,
-      "stories"
+      username
     );
 
-    const foldersSnap =
-      await getDocs(foldersRef);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+
+      return {
+
+        props: {
+          username,
+          foldersWithStories: [],
+        },
+
+      };
+
+    }
+
+    /* GET FOLDERS ARRAY */
+
+    const folders =
+      userSnap.data().folders || [];
+
+    const foldersWithStories = [];
 
     /* LOOP FOLDERS */
 
-    for (const folderDoc of foldersSnap.docs) {
+    for (const folderName of folders) {
 
-      const folderName = folderDoc.id;
+      const stories = [];
 
       /* GET EPISODES */
 
@@ -167,8 +194,6 @@ export async function getServerSideProps({ req }) {
 
           id: episodeDoc.id,
 
-          folder: folderName,
-
           title:
             data.title || "Untitled",
 
@@ -185,24 +210,31 @@ export async function getServerSideProps({ req }) {
 
       });
 
+      /* SORT STORIES */
+
+      stories.sort((a, b) => {
+
+        return (
+          new Date(b.createdAt) -
+          new Date(a.createdAt)
+        );
+
+      });
+
+      foldersWithStories.push({
+
+        folderName,
+        stories,
+
+      });
+
     }
-
-    /* SORT NEWEST FIRST */
-
-    stories.sort((a, b) => {
-
-      return (
-        new Date(b.createdAt) -
-        new Date(a.createdAt)
-      );
-
-    });
 
     return {
 
       props: {
         username,
-        stories,
+        foldersWithStories,
       },
 
     };
@@ -215,7 +247,7 @@ export async function getServerSideProps({ req }) {
 
       props: {
         username: null,
-        stories: [],
+        foldersWithStories: [],
       },
 
     };
