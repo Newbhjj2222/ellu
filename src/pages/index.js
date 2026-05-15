@@ -1,5 +1,6 @@
 import cookie from "cookie";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import {
   FaFolder,
@@ -22,14 +23,40 @@ import {
 
 import { db } from "../components/firebase";
 
-export default function Library({
-  username,
-  folders,
-}) {
+/* ================= PAGE ================= */
 
-  if (!username) {
-    return null; // SSR handles redirect
+export default function Library({ username, folders }) {
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+
+    if (!username) return;
+
+    const t = setTimeout(() => {
+      setLoading(false);
+    }, 400);
+
+    return () => clearTimeout(t);
+
+  }, [username]);
+
+  if (!username) return null;
+
+  /* ================= LOADING UI ================= */
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loadingBox}>
+          <div className={styles.spinner}></div>
+          <p>Loading your library...</p>
+        </div>
+      </div>
+    );
   }
+
+  /* ================= MAIN UI ================= */
 
   return (
 
@@ -42,7 +69,7 @@ export default function Library({
         <p>{folders.length} folders available</p>
       </div>
 
-      {/* EMPTY */}
+      {/* EMPTY STATE */}
 
       {folders.length === 0 ? (
 
@@ -61,18 +88,26 @@ export default function Library({
               className={`${styles.card} ${styles["card" + (index % 5)]}`}
             >
 
+              {/* ICON */}
+
               <div className={styles.iconBox}>
                 <FaFolder />
               </div>
+
+              {/* NAME */}
 
               <h2 className={styles.folderName}>
                 {folder.folderName}
               </h2>
 
+              {/* COUNT */}
+
               <div className={styles.storyCount}>
                 <FaBookOpen />
                 <span>{folder.totalStories} Stories</span>
               </div>
+
+              {/* VIEW BUTTON */}
 
               {folder.firstStoryId ? (
 
@@ -110,7 +145,6 @@ export default function Library({
     </div>
 
   );
-
 }
 
 /* ================= SSR ================= */
@@ -120,7 +154,6 @@ export async function getServerSideProps({ req }) {
   const parsed = cookie.parse(req.headers.cookie || "");
   const username = parsed.username || null;
 
-  // 🔥 REDIRECT IF NO USER
   if (!username) {
     return {
       redirect: {
@@ -157,19 +190,16 @@ export async function getServerSideProps({ req }) {
       "episodes"
     );
 
-    const q = query(
+    const latestQuery = query(
       episodesRef,
       orderBy("createdAt", "desc"),
       limit(1)
     );
 
-    const firstSnap = await getDocs(q);
+    const latestSnap = await getDocs(latestQuery);
 
-    let firstStoryId = null;
-
-    if (!firstSnap.empty) {
-      firstStoryId = firstSnap.docs[0].id;
-    }
+    const firstStoryId =
+      latestSnap.empty ? null : latestSnap.docs[0].id;
 
     const allSnap = await getDocs(episodesRef);
 
@@ -187,5 +217,4 @@ export async function getServerSideProps({ req }) {
       folders,
     },
   };
-
 }
