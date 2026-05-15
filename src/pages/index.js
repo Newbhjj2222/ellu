@@ -1,7 +1,6 @@
 // pages/library.js
 
-import Cookies from "cookies";
-import Link from "next/link";
+import cookie from "cookie";
 import styles from "../styles/library.module.css";
 
 import {
@@ -14,57 +13,72 @@ import { db } from "../components/firebase";
 export default function Library({ username, stories }) {
 
   if (!username) {
+
     return (
       <div className={styles.container}>
-        <h2>No user found.</h2>
+        <h1>No user found.</h1>
       </div>
     );
+
   }
 
   return (
+
     <div className={styles.container}>
 
+      {/* TOP */}
       <div className={styles.top}>
-        <h1>{username}'s Library</h1>
-        <p>{stories.length} stories found</p>
+
+        <h1>
+          {username}'s Library
+        </h1>
+
+        <p>
+          {stories.length} stories found
+        </p>
+
       </div>
 
+      {/* EMPTY */}
       {stories.length === 0 ? (
+
         <div className={styles.empty}>
           No stories available.
         </div>
+
       ) : (
 
         <div className={styles.grid}>
 
           {stories.map((story) => (
 
-            <div key={story.id} className={styles.card}>
+            <div
+              key={story.id}
+              className={styles.card}
+            >
 
               <div className={styles.folder}>
                 📁 {story.folder}
               </div>
 
-              <h2>{story.title}</h2>
+              <h2 className={styles.storyTitle}>
+                {story.title}
+              </h2>
 
               <div
                 className={styles.preview}
                 dangerouslySetInnerHTML={{
-                  __html: story.content.slice(0, 200) + "...",
+                  __html:
+                    story.content.substring(0, 250) + "...",
                 }}
               />
 
               <div className={styles.bottom}>
-                <span>
+
+                <span className={styles.date}>
                   {story.createdAt}
                 </span>
 
-                <Link
-                  href={`/read/${story.id}?folder=${story.folder}`}
-                  className={styles.readBtn}
-                >
-                  Read
-                </Link>
               </div>
 
             </div>
@@ -76,46 +90,64 @@ export default function Library({ username, stories }) {
       )}
 
     </div>
+
   );
+
 }
 
-/* ================= SSR ================= */
+/* ========================= SSR ========================= */
 
-export async function getServerSideProps({ req, res }) {
+export async function getServerSideProps({ req }) {
 
   try {
 
-    const cookies = new Cookies(req, res);
+    /* GET COOKIE */
 
-    const username = cookies.get("username");
+    const parsedCookies = cookie.parse(
+      req.headers.cookie || ""
+    );
+
+    const username =
+      parsedCookies.username || null;
+
+    /* NO USER */
 
     if (!username) {
+
       return {
+
         props: {
           username: null,
           stories: [],
         },
+
       };
+
     }
 
     const stories = [];
 
-    // folders collection
-    const storiesRoot = collection(
+    /* GET ALL FOLDERS */
+
+    const foldersRef = collection(
       db,
       "netstore",
       username,
       "stories"
     );
 
-    const foldersSnap = await getDocs(storiesRoot);
+    const foldersSnap =
+      await getDocs(foldersRef);
+
+    /* LOOP FOLDERS */
 
     for (const folderDoc of foldersSnap.docs) {
 
       const folderName = folderDoc.id;
 
-      // episodes
-      const episodeRef = collection(
+      /* GET EPISODES */
+
+      const episodesRef = collection(
         db,
         "netstore",
         username,
@@ -124,42 +156,68 @@ export async function getServerSideProps({ req, res }) {
         "episodes"
       );
 
-      const episodeSnap = await getDocs(episodeRef);
+      const episodesSnap =
+        await getDocs(episodesRef);
 
-      episodeSnap.forEach((doc) => {
+      episodesSnap.forEach((episodeDoc) => {
 
-        const data = doc.data();
+        const data = episodeDoc.data();
 
         stories.push({
-          id: doc.id,
+
+          id: episodeDoc.id,
+
           folder: folderName,
-          title: data.title || "Untitled",
-          content: data.content || "",
+
+          title:
+            data.title || "Untitled",
+
+          content:
+            data.content || "",
+
           createdAt: data.createdAt
             ? new Date(
                 data.createdAt.seconds * 1000
               ).toLocaleString()
             : "No date",
+
         });
 
       });
 
     }
 
+    /* SORT NEWEST FIRST */
+
+    stories.sort((a, b) => {
+
+      return (
+        new Date(b.createdAt) -
+        new Date(a.createdAt)
+      );
+
+    });
+
     return {
+
       props: {
         username,
         stories,
       },
+
     };
 
   } catch (error) {
 
+    console.log(error);
+
     return {
+
       props: {
         username: null,
         stories: [],
       },
+
     };
 
   }
