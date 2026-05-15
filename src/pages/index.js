@@ -1,6 +1,12 @@
-// pages/library.js
-
 import cookie from "cookie";
+import Link from "next/link";
+
+import {
+  FaFolder,
+  FaBookOpen,
+  FaEye,
+} from "react-icons/fa";
+
 import styles from "../styles/library.module.css";
 
 import {
@@ -14,7 +20,7 @@ import { db } from "../components/firebase";
 
 export default function Library({
   username,
-  foldersWithStories,
+  folders,
 }) {
 
   if (!username) {
@@ -31,74 +37,77 @@ export default function Library({
 
     <div className={styles.container}>
 
+      {/* HEADER */}
+
       <div className={styles.top}>
-        <h1>{username}'s Library</h1>
+
+        <h1>
+          📚 {username}'s Library
+        </h1>
+
+        <p>
+          {folders.length} folders available
+        </p>
+
       </div>
 
-      {foldersWithStories.length === 0 ? (
+      {/* EMPTY */}
+
+      {folders.length === 0 ? (
 
         <div className={styles.empty}>
-          No stories available.
+          No folders available.
         </div>
 
       ) : (
 
-        foldersWithStories.map((folder, index) => (
+        <div className={styles.grid}>
 
-          <div
-            key={index}
-            className={styles.folderBox}
-          >
+          {folders.map((folder, index) => (
 
-            <h2 className={styles.folderTitle}>
-              📁 {folder.folderName}
-            </h2>
+            <div
+              key={index}
+              className={styles.card}
+            >
 
-            {folder.stories.length === 0 ? (
+              {/* ICON */}
 
-              <div className={styles.noStories}>
-                Empty folder
+              <div className={styles.iconBox}>
+                <FaFolder />
               </div>
 
-            ) : (
+              {/* NAME */}
 
-              <div className={styles.grid}>
+              <h2 className={styles.folderName}>
+                {folder.folderName}
+              </h2>
 
-                {folder.stories.map((story) => (
+              {/* COUNT */}
 
-                  <div
-                    key={story.id}
-                    className={styles.card}
-                  >
-
-                    <h3>
-                      {story.title}
-                    </h3>
-
-                    <div
-                      className={styles.preview}
-                      dangerouslySetInnerHTML={{
-                        __html:
-                          story.content.substring(0, 250)
-                          + "...",
-                      }}
-                    />
-
-                    <span className={styles.date}>
-                      {story.createdAt}
-                    </span>
-
-                  </div>
-
-                ))}
-
+              <div className={styles.storyCount}>
+                <FaBookOpen />
+                <span>
+                  {folder.totalStories} Stories
+                </span>
               </div>
 
-            )}
+              {/* VIEW BUTTON (FIXED ROUTE) */}
 
-          </div>
+              <Link
+                href={`/folder/${folder.folderName}`}
+                className={styles.viewBtn}
+              >
 
-        ))
+                <FaEye />
+                <span>View Folder</span>
+
+              </Link>
+
+            </div>
+
+          ))}
+
+        </div>
 
       )}
 
@@ -114,8 +123,6 @@ export async function getServerSideProps({ req }) {
 
   try {
 
-    /* GET COOKIE */
-
     const parsedCookies = cookie.parse(
       req.headers.cookie || ""
     );
@@ -126,17 +133,13 @@ export async function getServerSideProps({ req }) {
     if (!username) {
 
       return {
-
         props: {
           username: null,
-          foldersWithStories: [],
+          folders: [],
         },
-
       };
 
     }
-
-    /* GET USER DOC */
 
     const userRef = doc(
       db,
@@ -149,30 +152,20 @@ export async function getServerSideProps({ req }) {
     if (!userSnap.exists()) {
 
       return {
-
         props: {
           username,
-          foldersWithStories: [],
+          folders: [],
         },
-
       };
 
     }
 
-    /* GET FOLDERS ARRAY */
-
-    const folders =
+    const foldersArray =
       userSnap.data().folders || [];
 
-    const foldersWithStories = [];
+    const folders = [];
 
-    /* LOOP FOLDERS */
-
-    for (const folderName of folders) {
-
-      const stories = [];
-
-      /* GET EPISODES */
+    for (const folderName of foldersArray) {
 
       const episodesRef = collection(
         db,
@@ -186,57 +179,21 @@ export async function getServerSideProps({ req }) {
       const episodesSnap =
         await getDocs(episodesRef);
 
-      episodesSnap.forEach((episodeDoc) => {
-
-        const data = episodeDoc.data();
-
-        stories.push({
-
-          id: episodeDoc.id,
-
-          title:
-            data.title || "Untitled",
-
-          content:
-            data.content || "",
-
-          createdAt: data.createdAt
-            ? new Date(
-                data.createdAt.seconds * 1000
-              ).toLocaleString()
-            : "No date",
-
-        });
-
-      });
-
-      /* SORT STORIES */
-
-      stories.sort((a, b) => {
-
-        return (
-          new Date(b.createdAt) -
-          new Date(a.createdAt)
-        );
-
-      });
-
-      foldersWithStories.push({
+      folders.push({
 
         folderName,
-        stories,
+        totalStories:
+          episodesSnap.size,
 
       });
 
     }
 
     return {
-
       props: {
         username,
-        foldersWithStories,
+        folders,
       },
-
     };
 
   } catch (error) {
@@ -244,12 +201,10 @@ export async function getServerSideProps({ req }) {
     console.log(error);
 
     return {
-
       props: {
         username: null,
-        foldersWithStories: [],
+        folders: [],
       },
-
     };
 
   }
