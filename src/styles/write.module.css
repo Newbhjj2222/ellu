@@ -2,10 +2,10 @@
 
 .container {
   min-height: 100vh;
-  padding: 20px;
+  padding: 18px;
   background: var(--background);
   color: var(--foreground);
-  position: relative;
+
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -17,7 +17,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   gap: 12px;
 
   padding: 12px;
@@ -34,10 +33,9 @@
 
   border-radius: 10px;
   border: none;
-
   outline: none;
 
-  background: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.35);
   color: white;
 
   font-size: 15px;
@@ -76,7 +74,7 @@
 .editor {
   flex: 1;
 
-  min-height: 400px;
+  min-height: 420px;
 
   padding: 18px;
 
@@ -88,15 +86,30 @@
   outline: none;
 
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.7;
 
   overflow-y: auto;
+
+  position: relative;
 }
 
-/* placeholder trick */
-.editor:empty:before {
+/* ================= REAL WORKING PLACEHOLDER ================= */
+
+.editor:empty::before {
   content: attr(data-placeholder);
   color: rgba(255,255,255,0.35);
+  pointer-events: none;
+
+  position: absolute;
+  top: 18px;
+  left: 18px;
+
+  font-size: 15px;
+}
+
+/* keep placeholder visible when user deletes content but leaves <br> */
+.editor:focus:empty::before {
+  opacity: 0.6;
 }
 
 /* ================= TOOLBAR ================= */
@@ -114,7 +127,7 @@
 
   border-radius: 14px;
 
-  background: rgba(20,20,20,0.9);
+  background: rgba(15,15,15,0.9);
   border: 1px solid rgba(255,255,255,0.1);
 
   backdrop-filter: blur(10px);
@@ -127,7 +140,6 @@
   height: 38px;
 
   border-radius: 10px;
-
   border: none;
 
   background: rgba(255,255,255,0.08);
@@ -143,7 +155,7 @@
   color: black;
 }
 
-/* ================= MODAL ================= */
+/* ================= MODALS ================= */
 
 .modalOverlay {
   position: fixed;
@@ -181,7 +193,6 @@
   padding: 10px 12px;
 
   border-radius: 10px;
-
   border: none;
   outline: none;
 
@@ -219,7 +230,7 @@
 
   border-radius: 10px;
 
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.85);
   border: 1px solid rgba(255,255,255,0.1);
 
   color: white;
@@ -241,7 +252,7 @@
   }
 
   .editor {
-    min-height: 300px;
+    min-height: 320px;
   }
 
   .toolbar {
