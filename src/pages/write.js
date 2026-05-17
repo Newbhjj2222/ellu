@@ -41,9 +41,12 @@ export default function Write() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 📊 COUNTERS
+  const [wordCount, setWordCount] = useState(0);
+  const [charCount, setCharCount] = useState(0);
+
   /* ---------------- LOAD USER ---------------- */
   useEffect(() => {
-
     const savedUsername = Cookies.get("username");
     if (savedUsername) setUsername(savedUsername);
 
@@ -59,14 +62,11 @@ export default function Write() {
     };
 
     loadFolders();
-
   }, []);
 
   /* ---------------- CLOSE ON OUTSIDE CLICK ---------------- */
   useEffect(() => {
-
     const closeAll = (e) => {
-
       if (toolbarRef.current && !toolbarRef.current.contains(e.target)) {
         setShowToolbar(false);
       }
@@ -76,12 +76,10 @@ export default function Write() {
         setShowFolderModal(false);
         setShowSaveModal(false);
       }
-
     };
 
     document.addEventListener("mousedown", closeAll);
     return () => document.removeEventListener("mousedown", closeAll);
-
   }, []);
 
   /* ---------------- FORMAT TEXT ---------------- */
@@ -89,9 +87,23 @@ export default function Write() {
     document.execCommand(command, false, value);
   };
 
+  /* ---------------- COUNTERS ---------------- */
+  const updateCounts = () => {
+    const text = editorRef.current?.innerText || "";
+
+    const chars = text.length;
+
+    const words = text
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+
+    setCharCount(chars);
+    setWordCount(words);
+  };
+
   /* ---------------- CREATE FOLDER ---------------- */
   const createFolder = async () => {
-
     if (!newFolder.trim()) return;
 
     const updated = [...folders, newFolder];
@@ -99,19 +111,15 @@ export default function Write() {
 
     const userRef = doc(db, "netstore", username);
 
-    await setDoc(userRef, {
-      folders: updated,
-    }, { merge: true });
+    await setDoc(userRef, { folders: updated }, { merge: true });
 
     setSelectedFolder(newFolder);
     setNewFolder("");
     setShowFolderModal(false);
-
   };
 
   /* ---------------- SAVE STORY ---------------- */
   const saveStory = async () => {
-
     const content = editorRef.current?.innerHTML;
 
     if (!username) return setMessage("No user found.");
@@ -119,7 +127,6 @@ export default function Write() {
     if (!episodeTitle || !content) return setMessage("Complete story first.");
 
     try {
-
       setLoading(true);
 
       const storyRef = collection(
@@ -145,6 +152,9 @@ export default function Write() {
       setEpisodeTitle("");
       setSelectedFolder("");
 
+      setWordCount(0);
+      setCharCount(0);
+
       setShowSaveModal(false);
 
     } catch (err) {
@@ -152,11 +162,9 @@ export default function Write() {
     } finally {
       setLoading(false);
     }
-
   };
 
   return (
-
     <div className={styles.container}>
 
       {/* TOP BAR */}
@@ -170,7 +178,6 @@ export default function Write() {
         />
 
         <div className={styles.actions}>
-
           <button onClick={() => setShowToolbar(!showToolbar)}>
             <FaPalette />
           </button>
@@ -182,9 +189,7 @@ export default function Write() {
           <button onClick={() => setShowSaveModal(true)}>
             <FaSave />
           </button>
-
         </div>
-
       </div>
 
       {/* FLOATING TOOLBAR */}
@@ -203,9 +208,15 @@ export default function Write() {
         contentEditable
         suppressContentEditableWarning
         data-placeholder="Start writing your story..."
+        onInput={updateCounts}
       />
 
-      {/* MODAL FOLDER */}
+      {/* COUNTERS */}
+      <div className={styles.counter}>
+        Words: {wordCount} | Characters: {charCount}
+      </div>
+
+      {/* FOLDER MODAL */}
       {showFolderModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
@@ -241,7 +252,6 @@ export default function Write() {
             <button onClick={saveStory} disabled={loading}>
               {loading ? "Saving..." : "Save Story"}
             </button>
-
           </div>
         </div>
       )}
@@ -250,6 +260,5 @@ export default function Write() {
       {message && <div className={styles.message}>{message}</div>}
 
     </div>
-
   );
 }
