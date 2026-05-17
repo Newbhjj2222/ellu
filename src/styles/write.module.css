@@ -30,7 +30,13 @@
   outline: none;
   font-size: 14px;
 }
-
+/* COUNTER */
+.counter {
+  padding: 8px 15px;
+  background: #1a1a1a;
+  font-size: 14px;
+  color: #aaa;
+}
 /* ---------------- ACTION BUTTONS ---------------- */
 .actions {
   display: flex;
