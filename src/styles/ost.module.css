@@ -1,0 +1,145 @@
+/* styles/post.module.css */
+
+.container {
+  width: 100%;
+  min-height: 100vh;
+  background: #0f172a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+
+.card {
+  width: 100%;
+  max-width: 800px;
+  background: #111827;
+  border-radius: 24px;
+  padding: 25px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.4);
+}
+
+.title {
+  color: white;
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.toolbar button {
+  width: 45px;
+  height: 45px;
+  border: none;
+  border-radius: 12px;
+  background: #1e293b;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.toolbar input[type="color"] {
+  width: 45px;
+  height: 45px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.editor {
+  width: 100%;
+  min-height: 260px;
+  background: #1e293b;
+  border-radius: 18px;
+  padding: 20px;
+  outline: none;
+  color: white;
+  font-size: 17px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  line-height: 1.7;
+}
+
+.editor:empty:before {
+  content: "Andika post yawe...";
+  color: #94a3b8;
+}
+
+.uploadBox {
+  width: 100%;
+  border: 2px dashed #3b82f6;
+  border-radius: 18px;
+  padding: 20px;
+  text-align: center;
+  color: #93c5fd;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-bottom: 20px;
+}
+
+.uploadBox:hover {
+  background: rgba(59,130,246,0.1);
+}
+
+.preview {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.preview img,
+.preview video {
+  width: 100%;
+  border-radius: 18px;
+  max-height: 500px;
+  object-fit: cover;
+}
+
+.progressWrapper {
+  width: 100%;
+  height: 12px;
+  background: #1e293b;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progressBar {
+  height: 100%;
+  background: #2563eb;
+  transition: width 0.2s;
+}
+
+.postBtn {
+  width: 100%;
+  height: 58px;
+  border: none;
+  border-radius: 18px;
+  background: #2563eb;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.postBtn:hover {
+  background: #1d4ed8;
+}
+
+.postBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.message {
+  color: white;
+  text-align: center;
+  margin-top: 18px;
+  font-size: 16px;
+}
